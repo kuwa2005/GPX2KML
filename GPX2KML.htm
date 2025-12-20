@@ -1,0 +1,1127 @@
+<!-- GPXからKMLへの変換 20210312-->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>GPX2KML</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" > 
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', 'Meiryo', sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+      line-height: 1.6;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #333;
+      margin-top: 0;
+      border-bottom: 3px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+    .drop-zone {
+      border: 3px dashed #ccc;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      background-color: #fafafa;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+    }
+    .drop-zone.dragover {
+      border-color: #4CAF50;
+      background-color: #e8f5e9;
+    }
+    .file-input-wrapper {
+      margin: 20px 0;
+    }
+    input[type="file"] {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+    }
+    .stats-panel {
+      background: #e3f2fd;
+      border-left: 4px solid #2196F3;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+      display: none;
+    }
+    .stats-panel.active {
+      display: block;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 10px;
+    }
+    .stat-item {
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .stat-label {
+      font-size: 0.9em;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    .stat-value {
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #2196F3;
+    }
+    form {
+      margin: 15px 0;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 4px;
+    }
+    label {
+      display: inline-block;
+      margin: 5px 10px 5px 0;
+      cursor: pointer;
+    }
+    input[type="radio"] {
+      margin-right: 5px;
+    }
+    input[type="number"] {
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 60px;
+    }
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      resize: vertical;
+    }
+    .save-button {
+      display: inline-block;
+      padding: 12px 30px;
+      background: #4CAF50;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+      transition: background 0.3s;
+      cursor: pointer;
+      border: none;
+      font-size: 1em;
+    }
+    .save-button:hover {
+      background: #45a049;
+    }
+    .save-button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .section-title {
+      font-weight: bold;
+      color: #ff3d3d;
+      margin: 10px 0 5px 0;
+    }
+    .icon-preview {
+      width: 24px;
+      height: 24px;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+    .color-picker-wrapper {
+      display: inline-block;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    input[type="color"] {
+      width: 50px;
+      height: 30px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .settings-buttons {
+      margin: 20px 0;
+      text-align: center;
+    }
+    .settings-button {
+      display: inline-block;
+      padding: 8px 15px;
+      margin: 0 5px;
+      background: #2196F3;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 0.9em;
+      cursor: pointer;
+      border: none;
+    }
+    .settings-button:hover {
+      background: #1976D2;
+    }
+    .settings-button.secondary {
+      background: #757575;
+    }
+    .settings-button.secondary:hover {
+      background: #616161;
+    }
+    .batch-progress {
+      margin: 20px 0;
+      padding: 15px;
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      border-radius: 4px;
+      display: none;
+    }
+    .batch-progress.active {
+      display: block;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 25px;
+      background: #e0e0e0;
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #4CAF50;
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.9em;
+      font-weight: bold;
+    }
+    .batch-status {
+      margin-top: 10px;
+      font-size: 0.9em;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+	<div class="container">
+		<h1>GPX→KML変換ツール V2.21</h1>
+		
+		<div class="drop-zone" id="dropZone">
+			<p><b>📁 GPXファイルをドロップするか、下のボタンで選択してください</b></p>
+			<div class="file-input-wrapper">
+				<input type="file" multiple id="selfile" accept=".gpx">
+			</div>
+		</div>
+
+		<div class="stats-panel" id="statsPanel">
+			<h3 style="margin-top: 0;">📊 GPXファイル統計情報</h3>
+			<div class="stats-grid" id="statsGrid">
+				<!-- 統計情報がここに表示されます -->
+			</div>
+		</div>
+
+		<div class="batch-progress" id="batchProgress">
+			<h3 style="margin-top: 0;">📦 一括変換中...</h3>
+			<div class="progress-bar">
+				<div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+			</div>
+			<div class="batch-status" id="batchStatus">準備中...</div>
+		</div>
+	</div>
+	<div class="container">
+		<form name="entFil">
+			<div>
+				<label for="read_txt"><b>入力ファイル（GPX）</b></label> <br>
+				<textarea name="read_txt" id="read_txt" rows="8" readonly></textarea><br>
+			</div>
+		</form>
+
+		<form name="exprtFil">
+			<div>
+				<label for="wrt_txt"><b>出力ファイル（KML）</b></label> <br>
+				<textarea name="wrt_txt" id="wrt_txt" rows="8" readonly></textarea><br>
+			</div>
+		</form>
+	</div>
+
+	<div class="container">
+
+		<div class="section-title">🞛 ラインの色:</div>
+		<form name="selbttn1">
+			<label><input type="radio" name="color1" value="ff0000ff" onchange="updateColorFromRadio()" checked> <span style="color:#ff0000"><b>赤</b></span></label>
+			<label><input type="radio" name="color1" value="ffff0000" onchange="updateColorFromRadio()" > <span style="color:#0000ff"><b>青</b></span></label>
+			<label><input type="radio" name="color1" value="ffd355ba" onchange="updateColorFromRadio()" > <span style="color:#ba55d3"><b>紫</b></span></label>
+			<label><input type="radio" name="color1" value="ff000000" onchange="updateColorFromRadio()" > <span style="color:#000000"><b>黒</b></span></label>
+			<label><input type="radio" name="color1" value="custom" onchange="updateColorFromRadio()" id="colorCustomRadio"> <span><b>カスタム</b></span></label>
+			<div class="color-picker-wrapper">
+				<input type="color" id="colorPicker" value="#ff0000" onchange="updateColorFromPicker()">
+			</div>
+			<br>
+			<div class="section-title" style="display: inline-block; margin-top: 10px;">🞛 ラインの太さ:</div>
+			<input type="number" id="WoL" min="0" max="10" value="3" onchange="mke_KLM(); saveSettings();">
+		</form>
+		<div class="section-title">🞛 トラック端マーカー：</div>
+		<form name="selbttn2">
+			<label><input type="radio" name="Icon" value="all" onchange="mke_KLM(); saveSettings();"> 全て表示する</label>
+			<label><input type="radio" name="Icon" value="se" onchange="mke_KLM(); saveSettings();"> 始点と終点のみ表示</label>
+			<label><input type="radio" name="Icon" value="no" onchange="mke_KLM(); saveSettings();" checked > 表示しない</label>
+		</form>
+		
+		<div class="section-title">🞛 ウェイポイント(地名)マーカー：</div>
+		<form name="selbttn3">
+			<label><input type="radio" name="Icon2" value="on" onchange="mke_KLM(); saveSettings();" > 表示する</label>
+			<label><input type="radio" name="Icon2" value="off" onchange="mke_KLM(); saveSettings();" checked > 表示しない</label>
+		</form>
+
+		<div class="section-title">🞛 ウェイポイントアイコン：</div>
+		<form name="selbttn4">
+			<label><input type="radio" name="Icon3" value="609.png" onchange="mke_KLM(); saveSettings();" checked>
+				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/609.png" class="icon-preview"></label>
+			<label><input type="radio" name="Icon3" value="097.png" onchange="mke_KLM(); saveSettings();" >
+				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/097.png" class="icon-preview"></label>
+			<label><input type="radio" name="Icon3" value="dot.png" onchange="mke_KLM(); saveSettings();" >
+				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/dot.png" class="icon-preview"></label>
+			<label><input type="radio" name="Icon3" value="817.png" onchange="mke_KLM(); saveSettings();" >
+				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/817.png" class="icon-preview"></label>
+			<label><input type="radio" name="Icon3" value="088.png" onchange="mke_KLM(); saveSettings();" >
+				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/088.png" class="icon-preview"></label>
+			<label><input type="radio" name="Icon3" value="089.png" onchange="mke_KLM(); saveSettings();" >
+				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/089.png" class="icon-preview"></label>
+		</form>
+
+		<div class="settings-buttons">
+			<button class="settings-button" onclick="saveSettings()">💾 設定を保存</button>
+			<button class="settings-button secondary" onclick="loadSettings(true)">📂 設定を読み込み</button>
+			<button class="settings-button secondary" onclick="resetSettings()">🔄 設定をリセット</button>
+		</div>
+
+		<div style="text-align: center; margin: 30px 0;">
+			<a id="getLocal" href="#" onClick="saveFile()" class="save-button">💾 変換したKMLファイルを保存</a>
+			<a id="openEarth" href="#" onClick="openInGoogleEarth()" class="save-button" style="background: #FF6B35; margin-left: 10px;">🌍 Google Earthで開く</a>
+		</div>
+	</div>
+
+<script>
+
+var obj1 = document.getElementById("selfile");
+var readTxt = ""; // 入力ファイルの文字列
+var writeFilNam = ""; // 拡張子無しファイル名
+var writeTex = ""; // 出力ファイル用文字列
+var pointer = 0; // 検索用ポインタ
+var trkpArr = [0, ""]; // trkptArr = [pointer, "lon,lat,ele"]
+var flgErr1 = 1; // エラーフラグ
+var WpList = []; // ウェイポイント(地名)配列 [ [ name, lat, lon ], ... ]
+var statsData = {}; // 統計情報データ
+
+
+//ファイル読み込み（ダイアログでファイルが選択かドロップされた時）
+const dropZone = document.getElementById("dropZone");
+dropZone.addEventListener("dragover", event => {
+	event.preventDefault();
+	event.dataTransfer.dropEffect = "copy";
+	dropZone.classList.add("dragover");
+});
+dropZone.addEventListener("dragleave", event => {
+	event.preventDefault();
+	dropZone.classList.remove("dragover");
+});
+dropZone.addEventListener("drop", event => {
+   event.preventDefault();
+   dropZone.classList.remove("dragover");
+   var files = event.dataTransfer.files;
+   getFiles(files);
+});
+function getFiles(files){
+	if (files.length === 0) return;
+	
+	// 複数ファイルの場合は一括処理
+	if (files.length > 1) {
+		batchConvertFiles(files);
+		return;
+	}
+	
+	// 単一ファイルの処理
+	for (let file of files){
+		var reader = new FileReader();
+		reader.readAsText(file); 
+		reader.onload = event => {
+			readTxt = event.target.result;
+			writeFilNam = file.name.split(".")[0];
+			after_file_read(readTxt, writeFilNam);
+		}
+	}
+}
+// ファイル選択ボタン入力
+var obj1 = document.getElementById("selfile");
+obj1.addEventListener("change",function(evt){
+	var files = evt.target.files;
+	if (files.length === 0) return;
+	
+	// 複数ファイルの場合は一括処理
+	if (files.length > 1) {
+		batchConvertFiles(files);
+		return;
+	}
+	
+	// 単一ファイルの処理
+	var input = files[0];
+	var reader = new FileReader();  // FileReaderの作成
+	reader.readAsText(input);  // テキスト形式で読み込む
+	// 読込終了後
+	reader.onload = function(){
+		readTxt = reader.result; // 読み込んだテキストを readTxt に入れる
+		writeFilNam = input.name.split( "." )[0];
+		after_file_read(readTxt, writeFilNam);
+	 }
+},false);
+
+function after_file_read(readTxt, writeFilNam){
+	document.entFil.read_txt.value = readTxt;  //テキストエリアに表示
+	let fieChk = 0;
+	pointer = readTxt.indexOf("</gpx>");
+	( pointer !== -1 ) ? fieChk = fieChk: fieChk++;
+	pointer = readTxt.indexOf("<gpx");
+	( pointer !== -1 ) ? fieChk = fieChk: fieChk++;
+	if (fieChk === 0 ){
+		make_Wplist(readTxt); // v20
+		make_Wplist_byYR(readTxt); // v20
+		calculateStats(readTxt); // 統計情報を計算
+		displayStats(); // 統計情報を表示
+		mke_KLM();
+		flgErr1 = 0;
+	}else{
+		alert("エラー: 有効なGPXファイルではありません。\nGPXファイルの形式を確認してください。");
+		flgErr1 = 1;
+		hideStats();
+	}
+}
+
+
+function get_trkptLLE(entStr, pointer){
+// 文字列entStrのpinterの位置から<trkptを検索しtrkptの経度、緯度、標高、地名を"Lon,Lat,Ele,strName"の文字列で返す
+// 見つからない時pointerは-1、文字列はブランク。<ele>のデータが無い時はブランク
+	pointer = entStr.indexOf("<trkpt",pointer);
+	let strDat, strEle;
+	if (pointer === -1){ return trkpArr = [pointer, ""]; }
+	let trkptStr = entStr.substring(pointer, entStr.indexOf("</trkpt>",pointer)+8);
+	let Latpt = trkptStr.indexOf("lat=");
+	let Lonpt = trkptStr.indexOf("lon=");
+	let strLat = trkptStr.substring( Latpt+5, trkptStr.indexOf('"', Latpt+5) );
+	let strLon = trkptStr.substring( Lonpt+5, trkptStr.indexOf('"', Lonpt+5) );
+	if ( trkptStr.indexOf("<ele>") != -1){
+		strEle = trkptStr.substring(trkptStr.indexOf("<ele>")+5,trkptStr.indexOf("</ele>"));
+		strDat = strLon +","+ strLat +","+ strEle;
+	}else{
+		strDat = strLon +","+ strLat +"," + 0; // v20 カシミール3dエラー対策
+	}
+	return trkpArr = [pointer, strDat];
+}
+
+
+function mke_KLM() {
+ 	if ( readTxt === "" ){ return; }
+	let LinWid = document.getElementById("WoL").value; // ライン幅
+	let LinColor = getLineColor(); // ラインカラー（カスタム色対応）
+	let iconSet = document.selbttn2.Icon.value; // トラック始終マーカー(アイコン)表示
+	let WpIcon = document.selbttn3.Icon2.value; // 地名マーカー有無
+	let WpSmb = document.selbttn4.Icon3.value; // ウェイポイントシンボル V21
+
+  // ヘッダとラインスタイルの記述
+	writeTex = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n';
+	writeTex += '  <Name>' + writeFilNam + '</Name>\n';
+	writeTex += '  <Style id="L1">\n    <LineStyle>\n      <color>' + LinColor + '</color>\n';
+	writeTex += '      <width>' + LinWid + '</width>\n';
+	writeTex += '    </LineStyle>\n  </Style>\n';
+  // ウェイポイント(地名)の記述 v20
+	if (WpList.length != 0 && WpIcon === "on" ){
+		writeTex += '  <Style id="WpIcon">\n    <IconStyle>\n      <Icon>\n';
+		writeTex += '        <href>https://maps.gsi.go.jp/portal/sys/v4/symbols/' + WpSmb + '</href>\n      </Icon>\n';
+		writeTex += '    <scale>1.0</scale>\n    </IconStyle>\n  </Style>\n';
+		for ( let i = 0; i < WpList.length ; i++ ){
+			writeTex += '  <Placemark>\n    <name>' + WpList[ i ][0] + '</name>\n';
+			writeTex += '      <styleUrl>#WpIcon</styleUrl>\n';
+			writeTex += '    <Point>\n      <altitudeMode>relativeToGround</altitudeMode>\n';
+			writeTex += '      <coordinates>' + WpList[ i ][2] + ',' + WpList[ i ][1] + '</coordinates>\n';
+			writeTex += '    </Point>\n   </Placemark>\n';
+		}
+	}
+ // トラック数をチェックしトラック名とナンバーの配列を作成
+	pointer = 0;
+	let NofTrk = 0, Pointer2 = 0; // V2.2
+	let trkName = "", NumName = ""
+	let trkNamArr = [], NumArr =[];
+	do {
+		pointer = readTxt.indexOf("<trk>", pointer +1);
+		pointer2 = readTxt.indexOf("<trk>", pointer +1); // V2.2
+		if ( pointer !== -1 ) {
+			NofTrk++;
+			pointer = readTxt.indexOf("<name>", pointer);
+			(pointer !== -1) ? trkName = readTxt.substring( pointer +6, readTxt.indexOf("</name>",pointer) ): trkName = "";
+			trkNamArr.push(trkName);		
+			let pointerNum = readTxt.indexOf("<number>", pointer); // V2.2
+			if ((pointerNum < pointer2) || (pointer2 == -1)) { // V2.2
+				if (pointerNum !== -1) {
+					NumName = readTxt.substring( pointerNum +8, readTxt.indexOf("</number>",pointerNum));
+					pointer = pointerNum;
+				}else{ 
+					NumName ="";
+				} 
+			}else{ 
+				NumName ="";
+			} 
+			NumArr.push(NumName); NumName ="";
+		}
+	} while ( pointer !== -1 );
+
+  // 各トラックのマーカー設定判定用フラグ配列
+	let trkFlg = "";
+	let trkFlgArr =[];
+	if ( NofTrk === 1){
+		trkFlgArr.push("b");
+	}else{
+		for ( let i = 0; i < NofTrk; i++ ) {
+			trkFlg = "b";
+			if ( i + 1 < NofTrk && trkNamArr[i] === trkNamArr[i+1] ){
+					trkFlg = "s";
+					if ( i != 0 && trkNamArr[i] === trkNamArr[i-1] ){
+						trkFlg = "m";
+					}
+			}else if ( i != 0 &&  trkNamArr[i] === trkNamArr[i-1] ){
+				trkFlg = "e";
+			}
+			if ( i + 1 == NofTrk ){
+				( trkNamArr[i] === trkNamArr[i-1] ) ? trkFlg = "e": trkFlg = trkFlg;
+			}
+			trkFlgArr.push(trkFlg);
+		}
+	}
+  // トラック名が同じ場合は<number>の値を付加したものをトラック名とする
+	for ( let i = 0; i < NofTrk; i++ ) {
+		if ( trkFlgArr[i] != "b" ){
+			trkNamArr[i] = trkNamArr[i] + NumArr[i];
+		}
+	}
+
+ // 1トラック分の文字列を切り出し、その文字列からマーカーとラインデータの記述を作成
+	pointer = 0;
+	for (let i = 0; i < NofTrk; i++ ) {
+		pointer = readTxt.indexOf("<trk>", pointer +1);
+		let strTrk = readTxt.substring( pointer, readTxt.indexOf("</trk>",pointer) );
+  // トラック始終マーカー記述
+		if ( iconSet !== "no" ){
+			get_trkptLLE(strTrk, 0);
+			let strIcSp = trkpArr[1];
+			get_trkptLLE( strTrk, strTrk.lastIndexOf( "<trkpt" ) -1 );
+			let strIcEp = trkpArr[1];
+			if ( iconSet == "all" || trkFlgArr[i] == "s" || trkFlgArr[i] == "b" ){
+				writeTex += '  <Placemark>\n    <name>' + trkNamArr[i] + ' Start</name>\n';
+				writeTex += '    <Point>\n      <altitudeMode>relativeToGround</altitudeMode>\n';
+				writeTex += '      <coordinates>' + strIcSp + '</coordinates>\n';
+				writeTex += '    </Point>\n   </Placemark>\n';
+			}
+			if ( iconSet == "all" || trkFlgArr[i] == "e" || trkFlgArr[i] == "b" ){
+				writeTex += '  <Placemark>\n    <name>' + trkNamArr[i] + ' End</name>\n';
+				writeTex += '    <Point>\n      <altitudeMode>relativeToGround</altitudeMode>\n';
+				writeTex += '      <coordinates>' + strIcEp + '</coordinates>\n';
+				writeTex += '    </Point>\n   </Placemark>\n';
+			}
+		}
+ // ラインの記述
+		writeTex += '  <Placemark>\n    <name>' + trkNamArr[i] + '</name>\n';
+		writeTex += '    <styleUrl>#L1</styleUrl>\n    <LineString>\n      <altitudeMode></altitudeMode>\n      <coordinates>\n';
+		let SubPointer = 0;
+		do { // ライン用緯度経度文字列生成
+			get_trkptLLE(strTrk, SubPointer +1 );
+			SubPointer = trkpArr[0];
+			if ( SubPointer !== -1 ){
+				writeTex +=  trkpArr[1] + " \n";
+			}
+		} while ( SubPointer !== -1 );
+		writeTex += '      </coordinates>\n    </LineString>\n  </Placemark>\n';
+	}
+ // フッター
+	writeTex += '</Document>\n</kml>\n';
+	document.exprtFil.wrt_txt.value = writeTex;  //KML文字列をテキストエリアに表示
+}
+
+
+function saveFile() {
+// ファイル出力
+	if (flgErr1 == 1 ){ 
+		alert("エラー: 有効なGPXファイルが読み込まれていません。\n先にGPXファイルを選択してください。"); 
+		return;
+	}
+//	mke_KLM();
+	let title = writeFilNam + ".kml"; // 出力ファイル名
+	let linkTag = document.getElementById( "getLocal" );
+	let linkTagAttr =  ["href","download"];
+	let stringObject = new Blob( [writeTex], { type: "text/plain" } );
+	let objectURL = window.URL.createObjectURL( stringObject );   
+	linkTag.setAttribute( linkTagAttr[0], objectURL );
+	linkTag.setAttribute( linkTagAttr[1], title ); 
+}
+
+function openInGoogleEarth() {
+// Google Earthで開く
+	if (flgErr1 == 1 ){ 
+		alert("エラー: 有効なGPXファイルが読み込まれていません。\n先にGPXファイルを選択してください。"); 
+		return;
+	}
+	
+	let title = writeFilNam + ".kml";
+	let stringObject = new Blob( [writeTex], { type: "application/vnd.google-earth.kml+xml" } );
+	let objectURL = window.URL.createObjectURL( stringObject );
+	
+	// 方法1: ダウンロードしてOSのデフォルトアプリで開く試み
+	// 注意: ブラウザのセキュリティ制限により、完全自動化は難しい場合があります
+	try {
+		// 一時的にダウンロードリンクを作成してクリック
+		let link = document.createElement("a");
+		link.href = objectURL;
+		link.download = title;
+		link.style.display = "none";
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		
+		// ダウンロード後、少し待ってからGoogle Earthで開く試み
+		setTimeout(() => {
+			// カスタムURLスキームを試す（Google Earthがインストールされている場合）
+			// 注意: この方法はブラウザやOSによって動作が異なる場合があります
+			try {
+				// Windowsの場合: shell:コマンドを試す（制限あり）
+				if (navigator.platform.indexOf('Win') !== -1) {
+					// Windowsでは直接開くのは難しいため、ユーザーに案内
+					if (confirm('KMLファイルをダウンロードしました。\n\nGoogle Earthがインストールされていて、KMLファイルの関連付けが設定されている場合、ダウンロードフォルダからファイルをダブルクリックするとGoogle Earthで開けます。\n\nGoogle Earthで直接開きますか？\n（ブラウザによっては動作しない場合があります）')) {
+						// カスタムURLスキームを試す
+						window.location.href = 'googleearth://' + encodeURIComponent(objectURL);
+					}
+				} else if (navigator.platform.indexOf('Mac') !== -1) {
+					// macOSの場合
+					if (confirm('KMLファイルをダウンロードしました。\n\nGoogle Earthで開きますか？')) {
+						window.location.href = 'googleearth://' + encodeURIComponent(objectURL);
+					}
+				} else {
+					// その他のOS
+					alert('KMLファイルをダウンロードしました。\n\nダウンロードフォルダからファイルを開いて、Google Earthで表示してください。');
+				}
+			} catch (e) {
+				console.log('Google Earthの直接起動に失敗しました:', e);
+				alert('KMLファイルをダウンロードしました。\n\nダウンロードフォルダからファイルを開いて、Google Earthで表示してください。');
+			}
+		}, 500);
+		
+		// 5秒後にURLを解放（メモリリーク防止）
+		setTimeout(() => {
+			window.URL.revokeObjectURL(objectURL);
+		}, 5000);
+		
+	} catch (e) {
+		console.error('Google Earthで開く処理に失敗しました:', e);
+		alert('エラー: Google Earthで開く処理に失敗しました。\n通常の保存機能を使用してください。');
+	}
+}
+
+
+// WP付GPX読み込み時のマーカーリスト作成(v20)
+function make_Wplist(entStr){
+	WpList = [], pointer = 0;
+	let nnn = 0;
+	do{
+		nnn++; if (nnn > 50) {break;} // 異常時ループ脱出
+		pointer = entStr.indexOf("<wpt", pointer);
+		if ( pointer != -1 ){
+			let Latpt = entStr.indexOf( "lat=",  pointer);
+			let Lonpt = entStr.indexOf( "lon=", pointer );
+			let LatStr = entStr.substring( Latpt+5, entStr.indexOf('"', Latpt + 5) );
+			let LonStr = entStr.substring( Lonpt+5, entStr.indexOf('"', Lonpt + 5) );
+			let nameStr = entStr.substring( entStr.indexOf( "<name>", pointer  ) + 6, entStr.indexOf( "</name>", pointer  ) );
+			WpList.push( [nameStr, LatStr, LonStr] );
+			pointer = Lonpt;
+		}
+	} while ( pointer != -1 );
+}
+
+// ヤマレコ地名付GPX読み込み時のマーカーリスト作成(v20)
+function make_Wplist_byYR(entStr){
+	if ( WpList.length != 0 ){ return; }
+	WpList = [];	pointer = 0;	let nnn = 0;
+	while ( nnn < 100 ){
+		pointer = entStr.indexOf("<trkpt",pointer);
+		if (pointer === -1){ break; }
+		let trkptStr = entStr.substring(pointer, entStr.indexOf("</trkpt>",pointer)+8);
+		if ( trkptStr.indexOf("<name>") != -1 ){
+			let Latpt = trkptStr.indexOf("lat=");
+			let Lonpt = trkptStr.indexOf("lon=");
+			let strLat = trkptStr.substring( Latpt+5, trkptStr.indexOf('"', Latpt+5) );
+			let strLon = trkptStr.substring( Lonpt+5, trkptStr.indexOf('"', Lonpt+5) );
+			let strName = trkptStr.substring(trkptStr.indexOf("<name>")+6, trkptStr.indexOf("</name>"));
+			strName = strName.split("[")[0]; // 読み仮名カット
+			let dupNameFlg = 0;
+		 	for ( let i = 0; i < WpList.length ; i++ ){ if ( WpList[ i ][0] ===  strName ){ dupNameFlg = 1; } }
+			if ( dupNameFlg === 0 ){ WpList.push( [ strName, parseFloat(strLat), parseFloat(strLon) ] ); }
+			nnn++;
+		}
+		pointer ++;
+	}
+}
+
+// 統計情報を計算する関数
+function calculateStats(gpxText) {
+	let stats = {
+		trackCount: 0,
+		totalPoints: 0,
+		waypointCount: WpList.length,
+		minElevation: null,
+		maxElevation: null,
+		totalDistance: 0,
+		startTime: null,
+		endTime: null
+	};
+
+	// トラック数をカウント
+	let trkPointer = 0;
+	do {
+		trkPointer = gpxText.indexOf("<trk>", trkPointer + 1);
+		if (trkPointer !== -1) {
+			stats.trackCount++;
+		}
+	} while (trkPointer !== -1);
+
+	// トラックポイントを解析
+	let pointPointer = 0;
+	let prevLat = null, prevLon = null;
+	let points = [];
+
+	do {
+		pointPointer = gpxText.indexOf("<trkpt", pointPointer);
+		if (pointPointer !== -1) {
+			stats.totalPoints++;
+			let trkptStr = gpxText.substring(pointPointer, gpxText.indexOf("</trkpt>", pointPointer) + 8);
+			
+			// 緯度経度を取得
+			let latMatch = trkptStr.match(/lat=["']([^"']+)["']/);
+			let lonMatch = trkptStr.match(/lon=["']([^"']+)["']/);
+			
+			if (latMatch && lonMatch) {
+				let lat = parseFloat(latMatch[1]);
+				let lon = parseFloat(lonMatch[1]);
+				points.push({lat: lat, lon: lon});
+				
+				// 距離を計算（ハーバーサイン公式）
+				if (prevLat !== null && prevLon !== null) {
+					let dLat = (lat - prevLat) * Math.PI / 180;
+					let dLon = (lon - prevLon) * Math.PI / 180;
+					let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+					        Math.cos(prevLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) *
+					        Math.sin(dLon/2) * Math.sin(dLon/2);
+					let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+					let distance = 6371 * c; // 地球の半径6371km
+					stats.totalDistance += distance;
+				}
+				prevLat = lat;
+				prevLon = lon;
+			}
+			
+			// 標高を取得
+			let eleMatch = trkptStr.match(/<ele>([^<]+)<\/ele>/);
+			if (eleMatch) {
+				let ele = parseFloat(eleMatch[1]);
+				if (stats.minElevation === null || ele < stats.minElevation) {
+					stats.minElevation = ele;
+				}
+				if (stats.maxElevation === null || ele > stats.maxElevation) {
+					stats.maxElevation = ele;
+				}
+			}
+			
+			// 時刻を取得
+			let timeMatch = trkptStr.match(/<time>([^<]+)<\/time>/);
+			if (timeMatch) {
+				let timeStr = timeMatch[1];
+				if (stats.startTime === null) {
+					stats.startTime = timeStr;
+				}
+				stats.endTime = timeStr;
+			}
+			
+			pointPointer++;
+		}
+	} while (pointPointer !== -1 && pointPointer < gpxText.length);
+
+	statsData = stats;
+}
+
+// 統計情報を表示する関数
+function displayStats() {
+	let panel = document.getElementById("statsPanel");
+	let grid = document.getElementById("statsGrid");
+	
+	if (!statsData || statsData.trackCount === 0) {
+		hideStats();
+		return;
+	}
+	
+	grid.innerHTML = "";
+	
+	// トラック数
+	addStatItem(grid, "トラック数", statsData.trackCount + " 本");
+	
+	// 総ポイント数
+	addStatItem(grid, "総ポイント数", statsData.totalPoints.toLocaleString() + " 点");
+	
+	// ウェイポイント数
+	if (statsData.waypointCount > 0) {
+		addStatItem(grid, "ウェイポイント数", statsData.waypointCount + " 点");
+	}
+	
+	// 総距離
+	if (statsData.totalDistance > 0) {
+		let distance = statsData.totalDistance;
+		let distanceStr;
+		if (distance < 1) {
+			distanceStr = (distance * 1000).toFixed(0) + " m";
+		} else {
+			distanceStr = distance.toFixed(2) + " km";
+		}
+		addStatItem(grid, "総距離", distanceStr);
+	}
+	
+	// 標高範囲
+	if (statsData.minElevation !== null && statsData.maxElevation !== null) {
+		let elevRange = statsData.maxElevation - statsData.minElevation;
+		addStatItem(grid, "標高範囲", 
+			statsData.minElevation.toFixed(0) + " m ～ " + 
+			statsData.maxElevation.toFixed(0) + " m" +
+			" (差: " + elevRange.toFixed(0) + " m)");
+	}
+	
+	// 時刻範囲
+	if (statsData.startTime && statsData.endTime) {
+		let startDate = new Date(statsData.startTime);
+		let endDate = new Date(statsData.endTime);
+		if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+			let startStr = startDate.toLocaleString('ja-JP');
+			let endStr = endDate.toLocaleString('ja-JP');
+			addStatItem(grid, "記録開始", startStr);
+			addStatItem(grid, "記録終了", endStr);
+			
+			// 経過時間
+			let duration = (endDate - startDate) / 1000 / 60; // 分
+			if (duration > 0) {
+				let hours = Math.floor(duration / 60);
+				let minutes = Math.floor(duration % 60);
+				let durationStr = hours > 0 ? hours + "時間" + minutes + "分" : minutes + "分";
+				addStatItem(grid, "記録時間", durationStr);
+			}
+		}
+	}
+	
+	panel.classList.add("active");
+}
+
+function addStatItem(grid, label, value) {
+	let item = document.createElement("div");
+	item.className = "stat-item";
+	item.innerHTML = '<div class="stat-label">' + label + '</div><div class="stat-value">' + value + '</div>';
+	grid.appendChild(item);
+}
+
+function hideStats() {
+	let panel = document.getElementById("statsPanel");
+	panel.classList.remove("active");
+}
+
+// カラーピッカー関連の関数
+function updateColorFromPicker() {
+	let colorPicker = document.getElementById("colorPicker");
+	let color = colorPicker.value;
+	// HTMLカラーコードをKML形式（AABBGGRR）に変換
+	let r = parseInt(color.substr(1, 2), 16);
+	let g = parseInt(color.substr(3, 2), 16);
+	let b = parseInt(color.substr(5, 2), 16);
+	let kmlColor = "ff" + 
+		("0" + b.toString(16)).slice(-2) +
+		("0" + g.toString(16)).slice(-2) +
+		("0" + r.toString(16)).slice(-2);
+	
+	// カスタムラジオボタンを選択
+	document.getElementById("colorCustomRadio").checked = true;
+	document.getElementById("colorCustomRadio").value = kmlColor;
+	
+	mke_KLM();
+	saveSettings();
+}
+
+function updateColorFromRadio() {
+	let selected = document.querySelector('input[name="color1"]:checked');
+	if (selected && selected.value !== "custom") {
+		// プリセット色が選択された場合、カラーピッカーを更新
+		let kmlColor = selected.value;
+		// KML形式（AABBGGRR）からHTMLカラーコード（#RRGGBB）に変換
+		let r = parseInt(kmlColor.substr(6, 2), 16);
+		let g = parseInt(kmlColor.substr(4, 2), 16);
+		let b = parseInt(kmlColor.substr(2, 2), 16);
+		let htmlColor = "#" + 
+			("0" + r.toString(16)).slice(-2) +
+			("0" + g.toString(16)).slice(-2) +
+			("0" + b.toString(16)).slice(-2);
+		document.getElementById("colorPicker").value = htmlColor;
+	}
+	mke_KLM();
+	saveSettings();
+}
+
+function getLineColor() {
+	let selected = document.querySelector('input[name="color1"]:checked');
+	if (selected && selected.value === "custom") {
+		// カスタム色の場合、カラーピッカーから取得
+		let colorPicker = document.getElementById("colorPicker");
+		let color = colorPicker.value;
+		let r = parseInt(color.substr(1, 2), 16);
+		let g = parseInt(color.substr(3, 2), 16);
+		let b = parseInt(color.substr(5, 2), 16);
+		return "ff" + 
+			("0" + b.toString(16)).slice(-2) +
+			("0" + g.toString(16)).slice(-2) +
+			("0" + r.toString(16)).slice(-2);
+	}
+	return selected ? selected.value : "ff0000ff";
+}
+
+// 設定の保存/読み込み機能
+function saveSettings() {
+	let settings = {
+		lineColor: getLineColor(),
+		lineColorMode: document.querySelector('input[name="color1"]:checked').value,
+		colorPickerValue: document.getElementById("colorPicker").value,
+		lineWidth: document.getElementById("WoL").value,
+		trackIcon: document.selbttn2.Icon.value,
+		waypointIcon: document.selbttn3.Icon2.value,
+		waypointSymbol: document.selbttn4.Icon3.value
+	};
+	
+	try {
+		localStorage.setItem('gpx2kml_settings', JSON.stringify(settings));
+		console.log('設定を保存しました');
+	} catch (e) {
+		console.error('設定の保存に失敗しました:', e);
+	}
+}
+
+function loadSettings(showMessage) {
+	// showMessageがtrueの場合のみメッセージを表示（手動読み込み時）
+	// 自動読み込み時（初回起動時）はfalseで呼び出される
+	try {
+		let saved = localStorage.getItem('gpx2kml_settings');
+		if (saved) {
+			let settings = JSON.parse(saved);
+			
+			// カラー設定
+			if (settings.lineColorMode === "custom") {
+				document.getElementById("colorCustomRadio").checked = true;
+				document.getElementById("colorPicker").value = settings.colorPickerValue || "#ff0000";
+			} else {
+				let radio = document.querySelector('input[name="color1"][value="' + settings.lineColorMode + '"]');
+				if (radio) {
+					radio.checked = true;
+					updateColorFromRadio();
+				}
+			}
+			
+			// ライン幅
+			if (settings.lineWidth) {
+				document.getElementById("WoL").value = settings.lineWidth;
+			}
+			
+			// トラック端マーカー
+			if (settings.trackIcon) {
+				let radio = document.querySelector('input[name="Icon"][value="' + settings.trackIcon + '"]');
+				if (radio) radio.checked = true;
+			}
+			
+			// ウェイポイントマーカー
+			if (settings.waypointIcon) {
+				let radio = document.querySelector('input[name="Icon2"][value="' + settings.waypointIcon + '"]');
+				if (radio) radio.checked = true;
+			}
+			
+			// ウェイポイントシンボル
+			if (settings.waypointSymbol) {
+				let radio = document.querySelector('input[name="Icon3"][value="' + settings.waypointSymbol + '"]');
+				if (radio) radio.checked = true;
+			}
+			
+			mke_KLM();
+			if (showMessage) {
+				alert('設定を読み込みました');
+			}
+		} else {
+			if (showMessage) {
+				alert('保存された設定がありません');
+			}
+		}
+	} catch (e) {
+		console.error('設定の読み込みに失敗しました:', e);
+		if (showMessage) {
+			alert('設定の読み込みに失敗しました');
+		}
+	}
+}
+
+function resetSettings() {
+	if (confirm('設定をリセットしますか？')) {
+		// デフォルト値に戻す
+		document.querySelector('input[name="color1"][value="ff0000ff"]').checked = true;
+		document.getElementById("colorPicker").value = "#ff0000";
+		document.getElementById("WoL").value = 3;
+		document.querySelector('input[name="Icon"][value="no"]').checked = true;
+		document.querySelector('input[name="Icon2"][value="off"]').checked = true;
+		document.querySelector('input[name="Icon3"][value="609.png"]').checked = true;
+		
+		mke_KLM();
+		saveSettings();
+		alert('設定をリセットしました');
+	}
+}
+
+// 複数ファイルの一括変換
+function batchConvertFiles(files) {
+	let progressPanel = document.getElementById("batchProgress");
+	let progressFill = document.getElementById("progressFill");
+	let batchStatus = document.getElementById("batchStatus");
+	
+	progressPanel.classList.add("active");
+	
+	let totalFiles = files.length;
+	let processedFiles = 0;
+	let kmlFiles = [];
+	
+	batchStatus.textContent = `0 / ${totalFiles} ファイル処理中...`;
+	
+	function processFile(index) {
+		if (index >= totalFiles) {
+			// すべてのファイル処理完了
+			downloadBatchFiles(kmlFiles);
+			progressPanel.classList.remove("active");
+			alert(`${totalFiles} 個のKMLファイルをダウンロードしました`);
+			return;
+		}
+		
+		let file = files[index];
+		let reader = new FileReader();
+		
+		reader.onload = function(e) {
+			let gpxText = e.target.result;
+			
+			// GPXファイルの検証
+			if (gpxText.indexOf("</gpx>") === -1 || gpxText.indexOf("<gpx") === -1) {
+				batchStatus.textContent = `エラー: ${file.name} は有効なGPXファイルではありません`;
+				processedFiles++;
+				updateProgress(processedFiles, totalFiles);
+				setTimeout(() => processFile(index + 1), 500);
+				return;
+			}
+			
+			// 一時的にグローバル変数を保存
+			let originalReadTxt = readTxt;
+			let originalWriteFilNam = writeFilNam;
+			
+			// ファイルを処理
+			readTxt = gpxText;
+			writeFilNam = file.name.split(".")[0];
+			
+			make_Wplist(readTxt);
+			make_Wplist_byYR(readTxt);
+			mke_KLM();
+			
+			// KMLデータを保存
+			kmlFiles.push({
+				name: writeFilNam + ".kml",
+				content: writeTex
+			});
+			
+			// 元の値を復元
+			readTxt = originalReadTxt;
+			writeFilNam = originalWriteFilNam;
+			
+			processedFiles++;
+			updateProgress(processedFiles, totalFiles);
+			batchStatus.textContent = `${processedFiles} / ${totalFiles} ファイル処理完了 (${file.name})`;
+			
+			// 次のファイルを処理
+			setTimeout(() => processFile(index + 1), 100);
+		};
+		
+		reader.onerror = function() {
+			batchStatus.textContent = `エラー: ${file.name} の読み込みに失敗しました`;
+			processedFiles++;
+			updateProgress(processedFiles, totalFiles);
+			setTimeout(() => processFile(index + 1), 500);
+		};
+		
+		reader.readAsText(file);
+	}
+	
+	// 最初のファイルから処理開始
+	processFile(0);
+}
+
+function updateProgress(current, total) {
+	let percentage = Math.round((current / total) * 100);
+	let progressFill = document.getElementById("progressFill");
+	progressFill.style.width = percentage + "%";
+	progressFill.textContent = percentage + "%";
+}
+
+function downloadBatchFiles(kmlFiles) {
+	// 各KMLファイルを個別にダウンロード
+	for (let i = 0; i < kmlFiles.length; i++) {
+		setTimeout(() => {
+			let file = kmlFiles[i];
+			let blob = new Blob([file.content], { type: "text/plain" });
+			let url = window.URL.createObjectURL(blob);
+			let a = document.createElement("a");
+			a.href = url;
+			a.download = file.name;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			window.URL.revokeObjectURL(url);
+		}, i * 200); // 200ms間隔でダウンロード
+	}
+}
+
+// ページ読み込み時に設定を復元（メッセージを表示しない）
+window.addEventListener('DOMContentLoaded', function() {
+	loadSettings(false); // 自動読み込み時はメッセージを表示しない
+});
+
+</script>
+</body>
+</html>
