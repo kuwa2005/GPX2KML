@@ -217,6 +217,29 @@
       margin-top: 10px;
       font-size: 0.9em;
     }
+    .elevation-profile {
+      margin-top: 20px;
+      padding: 15px;
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .elevation-profile h4 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #2196F3;
+    }
+    #elevationCanvas {
+      width: 100%;
+      max-width: 100%;
+      height: 200px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      display: block;
+      box-sizing: border-box;
+    }
     @media (max-width: 768px) {
       body {
         padding: 10px;
@@ -242,6 +265,10 @@
 			<h3 style="margin-top: 0;">📊 GPXファイル統計情報</h3>
 			<div class="stats-grid" id="statsGrid">
 				<!-- 統計情報がここに表示されます -->
+			</div>
+			<div class="elevation-profile" id="elevationProfile" style="display: none;">
+				<h4>📈 標高プロファイル</h4>
+				<canvas id="elevationCanvas"></canvas>
 			</div>
 		</div>
 
@@ -316,6 +343,25 @@
 				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/088.png" class="icon-preview"></label>
 			<label><input type="radio" name="Icon3" value="089.png" onchange="mke_KLM(); saveSettings();" >
 				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/089.png" class="icon-preview"></label>
+		</form>
+
+		<div class="section-title">🞛 距離マーカー：</div>
+		<form name="selbttn5">
+			<label><input type="radio" name="DistanceMarker" value="off" onchange="mke_KLM(); saveSettings();" checked> 表示しない</label>
+			<label><input type="radio" name="DistanceMarker" value="1km" onchange="mke_KLM(); saveSettings();"> 1kmごと</label>
+			<label><input type="radio" name="DistanceMarker" value="2km" onchange="mke_KLM(); saveSettings();"> 2kmごと</label>
+			<label><input type="radio" name="DistanceMarker" value="5km" onchange="mke_KLM(); saveSettings();"> 5kmごと</label>
+			<label><input type="radio" name="DistanceMarker" value="custom" onchange="mke_KLM(); saveSettings();" id="distMarkerCustomRadio"> カスタム:</label>
+			<input type="number" id="distMarkerInterval" min="0.1" max="100" step="0.1" value="1" style="width: 80px; margin-left: 5px;" onchange="mke_KLM(); saveSettings();"> km
+		</form>
+
+		<div class="section-title">🞛 ポイントの間引き（データ量削減）：</div>
+		<form name="selbttn6">
+			<label><input type="radio" name="Simplify" value="off" onchange="mke_KLM(); saveSettings();" checked> 間引きしない</label>
+			<label><input type="radio" name="Simplify" value="2" onchange="mke_KLM(); saveSettings();"> 2点ごと（50%削減）</label>
+			<label><input type="radio" name="Simplify" value="3" onchange="mke_KLM(); saveSettings();"> 3点ごと（67%削減）</label>
+			<label><input type="radio" name="Simplify" value="5" onchange="mke_KLM(); saveSettings();"> 5点ごと（80%削減）</label>
+			<label><input type="radio" name="Simplify" value="10" onchange="mke_KLM(); saveSettings();"> 10点ごと（90%削減）</label>
 		</form>
 
 		<div class="settings-buttons">
@@ -415,12 +461,25 @@ function after_file_read(readTxt, writeFilNam){
 		make_Wplist_byYR(readTxt); // v20
 		calculateStats(readTxt); // 統計情報を計算
 		displayStats(); // 統計情報を表示
-		mke_KLM();
-		flgErr1 = 0;
-		// 保存ボタンを表示
-		let saveButtonBottom = document.getElementById("saveButtonBottom");
-		if (saveButtonBottom) {
-			saveButtonBottom.style.display = "block";
+		mke_KLM(); // KMLを生成
+		
+		// KMLが正常に生成されたか確認
+		if (writeTex !== "" && writeTex.indexOf("</kml>") !== -1) {
+			flgErr1 = 0;
+			// 保存ボタンを表示
+			let saveButtonBottom = document.getElementById("saveButtonBottom");
+			if (saveButtonBottom) {
+				saveButtonBottom.style.display = "block";
+			}
+		} else {
+			alert("エラー: KMLファイルの生成に失敗しました。\nGPXファイルの内容を確認してください。");
+			flgErr1 = 1;
+			hideStats();
+			// 保存ボタンを非表示
+			let saveButtonBottom = document.getElementById("saveButtonBottom");
+			if (saveButtonBottom) {
+				saveButtonBottom.style.display = "none";
+			}
 		}
 	}else{
 		alert("エラー: 有効なGPXファイルではありません。\nGPXファイルの形式を確認してください。");
@@ -455,14 +514,103 @@ function get_trkptLLE(entStr, pointer){
 	return trkpArr = [pointer, strDat];
 }
 
+// 距離マーカーを生成する関数
+function generateDistanceMarkers(trkStr, trackName, intervalKm) {
+	let points = [];
+	let pointer = 0;
+	
+	// トラックポイントをすべて取得
+	do {
+		get_trkptLLE(trkStr, pointer + 1);
+		pointer = trkpArr[0];
+		if (pointer !== -1) {
+			let coords = trkpArr[1].split(',');
+			if (coords.length >= 2) {
+				points.push({
+					lon: parseFloat(coords[0]),
+					lat: parseFloat(coords[1]),
+					ele: coords.length >= 3 ? parseFloat(coords[2]) : 0
+				});
+			}
+		}
+	} while (pointer !== -1);
+	
+	if (points.length < 2) return;
+	
+	// 距離マーカーのスタイル定義（初回のみ）
+	if (!writeTex.includes('Style id="DistMarker"')) {
+		writeTex += '  <Style id="DistMarker">\n    <IconStyle>\n      <Icon>\n';
+		writeTex += '        <href>https://maps.gsi.go.jp/portal/sys/v4/symbols/dot.png</href>\n      </Icon>\n';
+		writeTex += '      <scale>1.2</scale>\n    </IconStyle>\n    <LabelStyle>\n      <scale>0.8</scale>\n    </LabelStyle>\n  </Style>\n';
+	}
+	
+	// 累積距離を計算しながらマーカーを配置
+	let cumulativeDistance = 0; // km
+	let nextMarkerDistance = intervalKm;
+	let prevPoint = points[0];
+	
+	for (let i = 1; i < points.length; i++) {
+		let currentPoint = points[i];
+		
+		// 2点間の距離を計算（ハーバーサイン公式）
+		let dLat = (currentPoint.lat - prevPoint.lat) * Math.PI / 180;
+		let dLon = (currentPoint.lon - prevPoint.lon) * Math.PI / 180;
+		let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+		        Math.cos(prevPoint.lat * Math.PI / 180) * Math.cos(currentPoint.lat * Math.PI / 180) *
+		        Math.sin(dLon/2) * Math.sin(dLon/2);
+		let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+		let segmentDistance = 6371 * c; // km
+		
+		cumulativeDistance += segmentDistance;
+		
+		// 次のマーカー位置に到達したかチェック
+		if (cumulativeDistance >= nextMarkerDistance) {
+			// マーカーを配置
+			let markerName = nextMarkerDistance.toFixed(1) + "km";
+			if (nextMarkerDistance >= 1 && nextMarkerDistance % 1 === 0) {
+				markerName = Math.round(nextMarkerDistance) + "km";
+			}
+			
+			writeTex += '  <Placemark>\n    <name>' + trackName + ' ' + markerName + '</name>\n';
+			writeTex += '    <styleUrl>#DistMarker</styleUrl>\n';
+			writeTex += '    <Point>\n      <altitudeMode>relativeToGround</altitudeMode>\n';
+			writeTex += '      <coordinates>' + currentPoint.lon + ',' + currentPoint.lat + ',' + currentPoint.ele + '</coordinates>\n';
+			writeTex += '    </Point>\n  </Placemark>\n';
+			
+			nextMarkerDistance += intervalKm;
+		}
+		
+		prevPoint = currentPoint;
+	}
+}
 
 function mke_KLM() {
- 	if ( readTxt === "" ){ return; }
+ 	if ( readTxt === "" ){ 
+		writeTex = ""; // エラー時は空にする
+		return; 
+	}
+	
+	// writeTexを初期化（前回のデータをクリア）
+	writeTex = "";
+	
 	let LinWid = document.getElementById("WoL").value; // ライン幅
 	let LinColor = getLineColor(); // ラインカラー（カスタム色対応）
 	let iconSet = document.selbttn2.Icon.value; // トラック始終マーカー(アイコン)表示
 	let WpIcon = document.selbttn3.Icon2.value; // 地名マーカー有無
 	let WpSmb = document.selbttn4.Icon3.value; // ウェイポイントシンボル V21
+	let distMarker = document.selbttn5.DistanceMarker.value; // 距離マーカー設定
+	let distMarkerInterval = 0; // 距離マーカーの間隔（km）
+	if (distMarker === "off") {
+		distMarkerInterval = 0;
+	} else if (distMarker === "custom") {
+		distMarkerInterval = parseFloat(document.getElementById("distMarkerInterval").value) || 1;
+	} else {
+		distMarkerInterval = parseFloat(distMarker) || 1;
+	}
+	let simplifyInterval = parseInt(document.selbttn6.Simplify.value) || 1; // 間引き間隔
+	if (simplifyInterval === 0 || isNaN(simplifyInterval)) {
+		simplifyInterval = 1; // デフォルト値
+	}
 
   // ヘッダとラインスタイルの記述
 	writeTex = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n';
@@ -510,6 +658,12 @@ function mke_KLM() {
 			NumArr.push(NumName); NumName ="";
 		}
 	} while ( pointer !== -1 );
+	
+	// トラックが見つからない場合はエラー
+	if (NofTrk === 0) {
+		writeTex = ""; // KMLをクリア
+		return;
+	}
 
   // 各トラックのマーカー設定判定用フラグ配列
 	let trkFlg = "";
@@ -564,15 +718,28 @@ function mke_KLM() {
 				writeTex += '    </Point>\n   </Placemark>\n';
 			}
 		}
+		
+		// 距離マーカーの生成
+		if (distMarkerInterval > 0) {
+			generateDistanceMarkers(strTrk, trkNamArr[i], distMarkerInterval);
+		}
+		
  // ラインの記述
 		writeTex += '  <Placemark>\n    <name>' + trkNamArr[i] + '</name>\n';
 		writeTex += '    <styleUrl>#L1</styleUrl>\n    <LineString>\n      <altitudeMode></altitudeMode>\n      <coordinates>\n';
 		let SubPointer = 0;
+		let pointCount = 0;
 		do { // ライン用緯度経度文字列生成
 			get_trkptLLE(strTrk, SubPointer +1 );
 			SubPointer = trkpArr[0];
 			if ( SubPointer !== -1 ){
-				writeTex +=  trkpArr[1] + " \n";
+				// 間引き処理：最初のポイント、最後のポイント、指定間隔のポイントのみ出力
+				if (simplifyInterval <= 1 || pointCount === 0 || 
+				    (pointCount % simplifyInterval === 0) ||
+				    (SubPointer === strTrk.lastIndexOf("<trkpt"))) {
+					writeTex +=  trkpArr[1] + " \n";
+				}
+				pointCount++;
 			}
 		} while ( SubPointer !== -1 );
 		writeTex += '      </coordinates>\n    </LineString>\n  </Placemark>\n';
@@ -585,11 +752,31 @@ function mke_KLM() {
 
 function saveFile() {
 // ファイル出力
-	if (flgErr1 == 1 ){ 
+	// 統計情報パネルが表示されている場合は、GPXファイルは読み込まれている
+	let statsPanel = document.getElementById("statsPanel");
+	let isStatsVisible = statsPanel && statsPanel.classList.contains("active");
+	
+	// より確実なエラーチェック
+	if (readTxt === "" || writeFilNam === "") {
 		alert("エラー: 有効なGPXファイルが読み込まれていません。\n先にGPXファイルを選択してください。"); 
 		return;
 	}
-//	mke_KLM();
+	
+	// KMLが生成されていない、または不完全な場合は再生成を試みる
+	if (writeTex === "" || writeTex.indexOf("</kml>") === -1) {
+		if (readTxt !== "" && (isStatsVisible || flgErr1 == 0)) {
+			mke_KLM();
+			// 再生成後も空の場合はエラー
+			if (writeTex === "" || writeTex.indexOf("</kml>") === -1) {
+				alert("エラー: KMLファイルの生成に失敗しました。\nGPXファイルの形式を確認してください。"); 
+				return;
+			}
+		} else {
+			alert("エラー: 有効なGPXファイルが読み込まれていません。\n先にGPXファイルを選択してください。"); 
+			return;
+		}
+	}
+	
 	let title = writeFilNam + ".kml"; // 出力ファイル名
 	let stringObject = new Blob( [writeTex], { type: "text/plain" } );
 	let objectURL = window.URL.createObjectURL( stringObject );
@@ -662,7 +849,11 @@ function calculateStats(gpxText) {
 		maxElevation: null,
 		totalDistance: 0,
 		startTime: null,
-		endTime: null
+		endTime: null,
+		averageSpeed: null,
+		maxSpeed: null,
+		totalAscent: 0,
+		totalDescent: 0
 	};
 
 	// トラック数をカウント
@@ -676,8 +867,10 @@ function calculateStats(gpxText) {
 
 	// トラックポイントを解析
 	let pointPointer = 0;
-	let prevLat = null, prevLon = null;
+	let prevLat = null, prevLon = null, prevEle = null, prevTime = null;
 	let points = [];
+	let speeds = [];
+	let totalTimeSeconds = 0;
 
 	do {
 		pointPointer = gpxText.indexOf("<trkpt", pointPointer);
@@ -689,9 +882,11 @@ function calculateStats(gpxText) {
 			let latMatch = trkptStr.match(/lat=["']([^"']+)["']/);
 			let lonMatch = trkptStr.match(/lon=["']([^"']+)["']/);
 			
+			let lat = null, lon = null, ele = null, timeStr = null;
+			
 			if (latMatch && lonMatch) {
-				let lat = parseFloat(latMatch[1]);
-				let lon = parseFloat(lonMatch[1]);
+				lat = parseFloat(latMatch[1]);
+				lon = parseFloat(lonMatch[1]);
 				points.push({lat: lat, lon: lon});
 				
 				// 距離を計算（ハーバーサイン公式）
@@ -704,6 +899,30 @@ function calculateStats(gpxText) {
 					let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 					let distance = 6371 * c; // 地球の半径6371km
 					stats.totalDistance += distance;
+					
+					// 速度を計算（時間データがある場合）
+					if (prevTime !== null) {
+						let timeMatch = trkptStr.match(/<time>([^<]+)<\/time>/);
+						if (timeMatch) {
+							timeStr = timeMatch[1];
+							let currentTime = new Date(timeStr);
+							let prevTimeDate = new Date(prevTime);
+							if (!isNaN(currentTime.getTime()) && !isNaN(prevTimeDate.getTime())) {
+								let timeDiff = (currentTime - prevTimeDate) / 1000; // 秒
+								if (timeDiff > 0 && timeDiff < 3600) { // 1時間以内の移動のみ
+									let speed = (distance * 1000) / timeDiff; // m/s
+									speed = speed * 3.6; // km/hに変換
+									if (speed < 200) { // 異常値を除外（200km/h以下）
+										speeds.push(speed);
+										if (stats.maxSpeed === null || speed > stats.maxSpeed) {
+											stats.maxSpeed = speed;
+										}
+									}
+									totalTimeSeconds += timeDiff;
+								}
+							}
+						}
+					}
 				}
 				prevLat = lat;
 				prevLon = lon;
@@ -712,29 +931,94 @@ function calculateStats(gpxText) {
 			// 標高を取得
 			let eleMatch = trkptStr.match(/<ele>([^<]+)<\/ele>/);
 			if (eleMatch) {
-				let ele = parseFloat(eleMatch[1]);
+				ele = parseFloat(eleMatch[1]);
 				if (stats.minElevation === null || ele < stats.minElevation) {
 					stats.minElevation = ele;
 				}
 				if (stats.maxElevation === null || ele > stats.maxElevation) {
 					stats.maxElevation = ele;
 				}
+				
+				// 登り/下りの標高差を計算
+				if (prevEle !== null) {
+					let elevDiff = ele - prevEle;
+					if (elevDiff > 0) {
+						stats.totalAscent += elevDiff;
+					} else if (elevDiff < 0) {
+						stats.totalDescent += Math.abs(elevDiff);
+					}
+				}
+				prevEle = ele;
 			}
 			
 			// 時刻を取得
 			let timeMatch = trkptStr.match(/<time>([^<]+)<\/time>/);
 			if (timeMatch) {
-				let timeStr = timeMatch[1];
+				timeStr = timeMatch[1];
 				if (stats.startTime === null) {
 					stats.startTime = timeStr;
 				}
 				stats.endTime = timeStr;
+				prevTime = timeStr;
 			}
 			
 			pointPointer++;
 		}
 	} while (pointPointer !== -1 && pointPointer < gpxText.length);
+	
+	// 平均速度を計算
+	if (stats.totalDistance > 0 && totalTimeSeconds > 0) {
+		stats.averageSpeed = (stats.totalDistance / totalTimeSeconds) * 3600; // km/h
+	} else if (speeds.length > 0) {
+		// 各セグメントの速度から平均を計算
+		let sum = 0;
+		for (let i = 0; i < speeds.length; i++) {
+			sum += speeds[i];
+		}
+		stats.averageSpeed = sum / speeds.length;
+	}
 
+	// 標高プロファイル用のデータを準備
+	stats.elevationProfile = [];
+	let pointPointer2 = 0;
+	let maxSamples = 500; // 最大500サンプル
+	let sampleCount = 0;
+	let totalPoints = 0;
+	
+	// まず総ポイント数をカウント
+	let tempPointer = 0;
+	while (tempPointer !== -1 && tempPointer < gpxText.length) {
+		tempPointer = gpxText.indexOf("<trkpt", tempPointer);
+		if (tempPointer !== -1) {
+			totalPoints++;
+			tempPointer++;
+		}
+	}
+	
+	let sampleInterval = Math.max(1, Math.floor(totalPoints / maxSamples));
+	
+	// 標高データをサンプリング
+	pointPointer2 = 0;
+	while (pointPointer2 !== -1 && pointPointer2 < gpxText.length && sampleCount < maxSamples) {
+		pointPointer2 = gpxText.indexOf("<trkpt", pointPointer2);
+		if (pointPointer2 !== -1) {
+			let trkptStr = gpxText.substring(pointPointer2, gpxText.indexOf("</trkpt>", pointPointer2) + 8);
+			let eleMatch = trkptStr.match(/<ele>([^<]+)<\/ele>/);
+			if (eleMatch) {
+				stats.elevationProfile.push(parseFloat(eleMatch[1]));
+			} else if (stats.minElevation !== null) {
+				stats.elevationProfile.push(stats.minElevation);
+			} else {
+				stats.elevationProfile.push(0);
+			}
+			sampleCount++;
+			// サンプリング間隔をスキップ
+			for (let skip = 0; skip < sampleInterval && pointPointer2 !== -1; skip++) {
+				pointPointer2 = gpxText.indexOf("<trkpt", pointPointer2 + 1);
+			}
+		}
+	}
+	
 	statsData = stats;
 }
 
@@ -783,6 +1067,26 @@ function displayStats() {
 			" (差: " + elevRange.toFixed(0) + " m)");
 	}
 	
+	// 累積登り/下り
+	if (statsData.totalAscent > 0 || statsData.totalDescent > 0) {
+		let ascentStr = statsData.totalAscent >= 1000 ? 
+			(statsData.totalAscent / 1000).toFixed(1) + " km" : 
+			statsData.totalAscent.toFixed(0) + " m";
+		let descentStr = statsData.totalDescent >= 1000 ? 
+			(statsData.totalDescent / 1000).toFixed(1) + " km" : 
+			statsData.totalDescent.toFixed(0) + " m";
+		addStatItem(grid, "累積登り", ascentStr);
+		addStatItem(grid, "累積下り", descentStr);
+	}
+	
+	// 速度情報
+	if (statsData.averageSpeed !== null && statsData.averageSpeed > 0) {
+		addStatItem(grid, "平均速度", statsData.averageSpeed.toFixed(1) + " km/h");
+	}
+	if (statsData.maxSpeed !== null && statsData.maxSpeed > 0) {
+		addStatItem(grid, "最大速度", statsData.maxSpeed.toFixed(1) + " km/h");
+	}
+	
 	// 時刻範囲
 	if (statsData.startTime && statsData.endTime) {
 		let startDate = new Date(statsData.startTime);
@@ -810,6 +1114,9 @@ function displayStats() {
 	if (saveButtonTop) {
 		saveButtonTop.style.display = "block";
 	}
+	
+	// 標高プロファイルを描画
+	drawElevationProfile();
 }
 
 function addStatItem(grid, label, value) {
@@ -822,12 +1129,185 @@ function addStatItem(grid, label, value) {
 function hideStats() {
 	let panel = document.getElementById("statsPanel");
 	let saveButtonTop = document.getElementById("saveButtonTop");
+	let elevationProfile = document.getElementById("elevationProfile");
 	panel.classList.remove("active");
 	
 	// 上部の保存ボタンも非表示
 	if (saveButtonTop) {
 		saveButtonTop.style.display = "none";
 	}
+	
+	// 標高プロファイルも非表示
+	if (elevationProfile) {
+		elevationProfile.style.display = "none";
+	}
+}
+
+// 標高プロファイルを描画する関数
+function drawElevationProfile() {
+	let canvas = document.getElementById("elevationCanvas");
+	let profileDiv = document.getElementById("elevationProfile");
+	
+	if (!canvas || !statsData || !statsData.elevationProfile || statsData.elevationProfile.length < 2) {
+		if (profileDiv) {
+			profileDiv.style.display = "none";
+		}
+		return;
+	}
+	
+	profileDiv.style.display = "block";
+	
+	// 少し待ってから描画（レイアウトが確定してから）
+	setTimeout(() => {
+		let ctx = canvas.getContext("2d");
+		// 統計情報パネルの幅を取得して横幅いっぱいに表示
+		let statsPanel = document.getElementById("statsPanel");
+		let parentWidth = statsPanel ? (statsPanel.offsetWidth || statsPanel.clientWidth) : (profileDiv.offsetWidth || profileDiv.clientWidth || 800);
+		// パディング（左右15pxずつ）を考慮
+		let canvasWidth = Math.max(400, parentWidth - 30);
+		canvas.style.width = "100%";
+		canvas.style.maxWidth = "100%";
+		let width = canvas.width = canvasWidth;
+		let height = canvas.height = 200;
+		
+		// 背景をクリア
+		ctx.clearRect(0, 0, width, height);
+		ctx.fillStyle = "#f9f9f9";
+		ctx.fillRect(0, 0, width, height);
+		
+		let elevations = statsData.elevationProfile;
+		let minElev = Math.min(...elevations);
+		let maxElev = Math.max(...elevations);
+		let elevRange = maxElev - minElev;
+		if (elevRange === 0) elevRange = 1;
+		
+		let padding = 40;
+		let graphWidth = width - padding * 2;
+		let graphHeight = height - padding * 2;
+		
+		// グリッド線を描画
+		ctx.strokeStyle = "#e0e0e0";
+		ctx.lineWidth = 1;
+		for (let i = 0; i <= 5; i++) {
+			let y = padding + (graphHeight / 5) * i;
+			ctx.beginPath();
+			ctx.moveTo(padding, y);
+			ctx.lineTo(width - padding, y);
+			ctx.stroke();
+			
+			// 標高ラベル
+			let elev = maxElev - (elevRange / 5) * i;
+			ctx.fillStyle = "#666";
+			ctx.font = "10px sans-serif";
+			ctx.textAlign = "right";
+			ctx.fillText(Math.round(elev) + "m", padding - 5, y + 4);
+		}
+		
+		// 距離ラベル
+		ctx.fillStyle = "#666";
+		ctx.font = "10px sans-serif";
+		ctx.textAlign = "center";
+		if (statsData.totalDistance > 0) {
+			for (let i = 0; i <= 5; i++) {
+				let x = padding + (graphWidth / 5) * i;
+				let dist = (statsData.totalDistance / 5) * i;
+				ctx.fillText(dist.toFixed(1) + "km", x, height - padding + 15);
+			}
+		}
+		
+		// プロファイル線を描画
+		ctx.strokeStyle = "#2196F3";
+		ctx.lineWidth = 2;
+		ctx.beginPath();
+		
+		for (let i = 0; i < elevations.length; i++) {
+			let x = padding + (graphWidth / (elevations.length - 1)) * i;
+			let y = padding + graphHeight - ((elevations[i] - minElev) / elevRange) * graphHeight;
+			
+			if (i === 0) {
+				ctx.moveTo(x, y);
+			} else {
+				ctx.lineTo(x, y);
+			}
+		}
+		ctx.stroke();
+		
+		// グラフの下に塗りつぶし
+		ctx.fillStyle = "rgba(33, 150, 243, 0.2)";
+		ctx.lineTo(width - padding, height - padding);
+		ctx.lineTo(padding, height - padding);
+		ctx.closePath();
+		ctx.fill();
+	}, 100);
+	
+	// 背景をクリア
+	ctx.clearRect(0, 0, width, height);
+	ctx.fillStyle = "#f9f9f9";
+	ctx.fillRect(0, 0, width, height);
+	
+	let elevations = statsData.elevationProfile;
+	let minElev = Math.min(...elevations);
+	let maxElev = Math.max(...elevations);
+	let elevRange = maxElev - minElev;
+	if (elevRange === 0) elevRange = 1;
+	
+	let padding = 40;
+	let graphWidth = width - padding * 2;
+	let graphHeight = height - padding * 2;
+	
+	// グリッド線を描画
+	ctx.strokeStyle = "#e0e0e0";
+	ctx.lineWidth = 1;
+	for (let i = 0; i <= 5; i++) {
+		let y = padding + (graphHeight / 5) * i;
+		ctx.beginPath();
+		ctx.moveTo(padding, y);
+		ctx.lineTo(width - padding, y);
+		ctx.stroke();
+		
+		// 標高ラベル
+		let elev = maxElev - (elevRange / 5) * i;
+		ctx.fillStyle = "#666";
+		ctx.font = "10px sans-serif";
+		ctx.textAlign = "right";
+		ctx.fillText(Math.round(elev) + "m", padding - 5, y + 4);
+	}
+	
+	// 距離ラベル
+	ctx.fillStyle = "#666";
+	ctx.font = "10px sans-serif";
+	ctx.textAlign = "center";
+	if (statsData.totalDistance > 0) {
+		for (let i = 0; i <= 5; i++) {
+			let x = padding + (graphWidth / 5) * i;
+			let dist = (statsData.totalDistance / 5) * i;
+			ctx.fillText(dist.toFixed(1) + "km", x, height - padding + 15);
+		}
+	}
+	
+	// プロファイル線を描画
+	ctx.strokeStyle = "#2196F3";
+	ctx.lineWidth = 2;
+	ctx.beginPath();
+	
+	for (let i = 0; i < elevations.length; i++) {
+		let x = padding + (graphWidth / (elevations.length - 1)) * i;
+		let y = padding + graphHeight - ((elevations[i] - minElev) / elevRange) * graphHeight;
+		
+		if (i === 0) {
+			ctx.moveTo(x, y);
+		} else {
+			ctx.lineTo(x, y);
+		}
+	}
+	ctx.stroke();
+	
+	// グラフの下に塗りつぶし
+	ctx.fillStyle = "rgba(33, 150, 243, 0.2)";
+	ctx.lineTo(width - padding, height - padding);
+	ctx.lineTo(padding, height - padding);
+	ctx.closePath();
+	ctx.fill();
 }
 
 // カラーピッカー関連の関数
@@ -896,7 +1376,10 @@ function saveSettings() {
 		lineWidth: document.getElementById("WoL").value,
 		trackIcon: document.selbttn2.Icon.value,
 		waypointIcon: document.selbttn3.Icon2.value,
-		waypointSymbol: document.selbttn4.Icon3.value
+		waypointSymbol: document.selbttn4.Icon3.value,
+		distanceMarker: document.selbttn5.DistanceMarker.value,
+		distanceMarkerInterval: document.getElementById("distMarkerInterval").value,
+		simplify: document.selbttn6.Simplify.value
 	};
 	
 	try {
@@ -950,6 +1433,15 @@ function loadSettings(showMessage) {
 				if (radio) radio.checked = true;
 			}
 			
+			// 距離マーカー
+			if (settings.distanceMarker) {
+				let radio = document.querySelector('input[name="DistanceMarker"][value="' + settings.distanceMarker + '"]');
+				if (radio) radio.checked = true;
+				if (settings.distanceMarkerInterval) {
+					document.getElementById("distMarkerInterval").value = settings.distanceMarkerInterval;
+				}
+			}
+			
 			mke_KLM();
 			if (showMessage) {
 				alert('設定を読み込みました');
@@ -976,6 +1468,9 @@ function resetSettings() {
 		document.querySelector('input[name="Icon"][value="no"]').checked = true;
 		document.querySelector('input[name="Icon2"][value="off"]').checked = true;
 		document.querySelector('input[name="Icon3"][value="609.png"]').checked = true;
+		document.querySelector('input[name="DistanceMarker"][value="off"]').checked = true;
+		document.getElementById("distMarkerInterval").value = 1;
+		document.querySelector('input[name="Simplify"][value="off"]').checked = true;
 		
 		mke_KLM();
 		saveSettings();
