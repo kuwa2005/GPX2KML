@@ -245,6 +245,10 @@
 			</div>
 		</div>
 
+		<div style="text-align: center; margin: 20px 0; display: none;" id="saveButtonTop">
+			<a id="getLocalTop" href="#" onClick="saveFile()" class="save-button">💾 変換したKMLファイルを保存</a>
+		</div>
+
 		<div class="batch-progress" id="batchProgress">
 			<h3 style="margin-top: 0;">📦 一括変換中...</h3>
 			<div class="progress-bar">
@@ -320,9 +324,8 @@
 			<button class="settings-button secondary" onclick="resetSettings()">🔄 設定をリセット</button>
 		</div>
 
-		<div style="text-align: center; margin: 30px 0;">
+		<div style="text-align: center; margin: 30px 0; display: none;" id="saveButtonBottom">
 			<a id="getLocal" href="#" onClick="saveFile()" class="save-button">💾 変換したKMLファイルを保存</a>
-			<a id="openEarth" href="#" onClick="openInGoogleEarth()" class="save-button" style="background: #FF6B35; margin-left: 10px;">🌍 Google Earthで開く</a>
 		</div>
 	</div>
 
@@ -414,10 +417,20 @@ function after_file_read(readTxt, writeFilNam){
 		displayStats(); // 統計情報を表示
 		mke_KLM();
 		flgErr1 = 0;
+		// 保存ボタンを表示
+		let saveButtonBottom = document.getElementById("saveButtonBottom");
+		if (saveButtonBottom) {
+			saveButtonBottom.style.display = "block";
+		}
 	}else{
 		alert("エラー: 有効なGPXファイルではありません。\nGPXファイルの形式を確認してください。");
 		flgErr1 = 1;
 		hideStats();
+		// 保存ボタンを非表示
+		let saveButtonBottom = document.getElementById("saveButtonBottom");
+		if (saveButtonBottom) {
+			saveButtonBottom.style.display = "none";
+		}
 	}
 }
 
@@ -578,72 +591,20 @@ function saveFile() {
 	}
 //	mke_KLM();
 	let title = writeFilNam + ".kml"; // 出力ファイル名
-	let linkTag = document.getElementById( "getLocal" );
-	let linkTagAttr =  ["href","download"];
 	let stringObject = new Blob( [writeTex], { type: "text/plain" } );
-	let objectURL = window.URL.createObjectURL( stringObject );   
-	linkTag.setAttribute( linkTagAttr[0], objectURL );
-	linkTag.setAttribute( linkTagAttr[1], title ); 
-}
-
-function openInGoogleEarth() {
-// Google Earthで開く
-	if (flgErr1 == 1 ){ 
-		alert("エラー: 有効なGPXファイルが読み込まれていません。\n先にGPXファイルを選択してください。"); 
-		return;
-	}
-	
-	let title = writeFilNam + ".kml";
-	let stringObject = new Blob( [writeTex], { type: "application/vnd.google-earth.kml+xml" } );
 	let objectURL = window.URL.createObjectURL( stringObject );
 	
-	// 方法1: ダウンロードしてOSのデフォルトアプリで開く試み
-	// 注意: ブラウザのセキュリティ制限により、完全自動化は難しい場合があります
-	try {
-		// 一時的にダウンロードリンクを作成してクリック
-		let link = document.createElement("a");
-		link.href = objectURL;
-		link.download = title;
-		link.style.display = "none";
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		
-		// ダウンロード後、少し待ってからGoogle Earthで開く試み
-		setTimeout(() => {
-			// カスタムURLスキームを試す（Google Earthがインストールされている場合）
-			// 注意: この方法はブラウザやOSによって動作が異なる場合があります
-			try {
-				// Windowsの場合: shell:コマンドを試す（制限あり）
-				if (navigator.platform.indexOf('Win') !== -1) {
-					// Windowsでは直接開くのは難しいため、ユーザーに案内
-					if (confirm('KMLファイルをダウンロードしました。\n\nGoogle Earthがインストールされていて、KMLファイルの関連付けが設定されている場合、ダウンロードフォルダからファイルをダブルクリックするとGoogle Earthで開けます。\n\nGoogle Earthで直接開きますか？\n（ブラウザによっては動作しない場合があります）')) {
-						// カスタムURLスキームを試す
-						window.location.href = 'googleearth://' + encodeURIComponent(objectURL);
-					}
-				} else if (navigator.platform.indexOf('Mac') !== -1) {
-					// macOSの場合
-					if (confirm('KMLファイルをダウンロードしました。\n\nGoogle Earthで開きますか？')) {
-						window.location.href = 'googleearth://' + encodeURIComponent(objectURL);
-					}
-				} else {
-					// その他のOS
-					alert('KMLファイルをダウンロードしました。\n\nダウンロードフォルダからファイルを開いて、Google Earthで表示してください。');
-				}
-			} catch (e) {
-				console.log('Google Earthの直接起動に失敗しました:', e);
-				alert('KMLファイルをダウンロードしました。\n\nダウンロードフォルダからファイルを開いて、Google Earthで表示してください。');
-			}
-		}, 500);
-		
-		// 5秒後にURLを解放（メモリリーク防止）
-		setTimeout(() => {
-			window.URL.revokeObjectURL(objectURL);
-		}, 5000);
-		
-	} catch (e) {
-		console.error('Google Earthで開く処理に失敗しました:', e);
-		alert('エラー: Google Earthで開く処理に失敗しました。\n通常の保存機能を使用してください。');
+	// 上部のボタンと下部のボタンの両方を更新
+	let linkTagTop = document.getElementById( "getLocalTop" );
+	let linkTagBottom = document.getElementById( "getLocal" );
+	
+	if (linkTagTop) {
+		linkTagTop.setAttribute( "href", objectURL );
+		linkTagTop.setAttribute( "download", title );
+	}
+	if (linkTagBottom) {
+		linkTagBottom.setAttribute( "href", objectURL );
+		linkTagBottom.setAttribute( "download", title );
 	}
 }
 
@@ -781,6 +742,7 @@ function calculateStats(gpxText) {
 function displayStats() {
 	let panel = document.getElementById("statsPanel");
 	let grid = document.getElementById("statsGrid");
+	let saveButtonTop = document.getElementById("saveButtonTop");
 	
 	if (!statsData || statsData.trackCount === 0) {
 		hideStats();
@@ -843,6 +805,11 @@ function displayStats() {
 	}
 	
 	panel.classList.add("active");
+	
+	// 上部の保存ボタンも表示
+	if (saveButtonTop) {
+		saveButtonTop.style.display = "block";
+	}
 }
 
 function addStatItem(grid, label, value) {
@@ -854,7 +821,13 @@ function addStatItem(grid, label, value) {
 
 function hideStats() {
 	let panel = document.getElementById("statsPanel");
+	let saveButtonTop = document.getElementById("saveButtonTop");
 	panel.classList.remove("active");
+	
+	// 上部の保存ボタンも非表示
+	if (saveButtonTop) {
+		saveButtonTop.style.display = "none";
+	}
 }
 
 // カラーピッカー関連の関数
