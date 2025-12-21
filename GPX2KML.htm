@@ -4,54 +4,20 @@
 <head>
   <meta charset="UTF-8">
   <title>GPX2KML</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" > 
+  <meta name="viewport" content="width=device-width,initial-scale=1" >
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     * {
       box-sizing: border-box;
     }
     body {
       font-family: 'Segoe UI', 'Meiryo', sans-serif;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f5f5f5;
       line-height: 1.6;
     }
-    .container {
-      background: white;
-      border-radius: 8px;
-      padding: 25px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    h1 {
-      color: #333;
-      margin-top: 0;
-      border-bottom: 3px solid #4CAF50;
-      padding-bottom: 10px;
-    }
-    .drop-zone {
-      border: 3px dashed #ccc;
-      border-radius: 8px;
-      padding: 40px;
-      text-align: center;
-      background-color: #fafafa;
-      transition: all 0.3s ease;
-      margin-bottom: 20px;
-    }
     .drop-zone.dragover {
-      border-color: #4CAF50;
-      background-color: #e8f5e9;
-    }
-    .file-input-wrapper {
-      margin: 20px 0;
-    }
-    input[type="file"] {
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background: white;
-      cursor: pointer;
+      border-color: #198754 !important;
+      background-color: #d1e7dd !important;
     }
     .stats-panel {
       background: #e3f2fd;
@@ -86,60 +52,6 @@
       font-weight: bold;
       color: #2196F3;
     }
-    form {
-      margin: 15px 0;
-      padding: 15px;
-      background: #f9f9f9;
-      border-radius: 4px;
-    }
-    label {
-      display: inline-block;
-      margin: 5px 10px 5px 0;
-      cursor: pointer;
-    }
-    input[type="radio"] {
-      margin-right: 5px;
-    }
-    input[type="number"] {
-      padding: 5px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      width: 60px;
-    }
-    textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9em;
-      resize: vertical;
-    }
-    .save-button {
-      display: inline-block;
-      padding: 12px 30px;
-      background: #4CAF50;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-weight: bold;
-      transition: background 0.3s;
-      cursor: pointer;
-      border: none;
-      font-size: 1em;
-    }
-    .save-button:hover {
-      background: #45a049;
-    }
-    .save-button:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-    .section-title {
-      font-weight: bold;
-      color: #ff3d3d;
-      margin: 10px 0 5px 0;
-    }
     .icon-preview {
       width: 24px;
       height: 24px;
@@ -157,61 +69,6 @@
       border: 1px solid #ddd;
       border-radius: 4px;
       cursor: pointer;
-    }
-    .settings-buttons {
-      margin: 20px 0;
-      text-align: center;
-    }
-    .settings-button {
-      display: inline-block;
-      padding: 8px 15px;
-      margin: 0 5px;
-      background: #2196F3;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-size: 0.9em;
-      cursor: pointer;
-      border: none;
-    }
-    .settings-button:hover {
-      background: #1976D2;
-    }
-    .settings-button.secondary {
-      background: #757575;
-    }
-    .settings-button.secondary:hover {
-      background: #616161;
-    }
-    .batch-progress {
-      margin: 20px 0;
-      padding: 15px;
-      background: #fff3cd;
-      border-left: 4px solid #ffc107;
-      border-radius: 4px;
-      display: none;
-    }
-    .batch-progress.active {
-      display: block;
-    }
-    .progress-bar {
-      width: 100%;
-      height: 25px;
-      background: #e0e0e0;
-      border-radius: 12px;
-      overflow: hidden;
-      margin: 10px 0;
-    }
-    .progress-fill {
-      height: 100%;
-      background: #4CAF50;
-      transition: width 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 0.9em;
-      font-weight: bold;
     }
     .batch-status {
       margin-top: 10px;
@@ -250,128 +107,235 @@
     }
   </style>
 </head>
-<body>
-	<div class="container">
-		<h1>GPX→KML変換ツール V2.21</h1>
+<body class="bg-light">
+	<div class="container mt-4">
+		<div class="card shadow-sm mb-4">
+			<div class="card-body">
+				<h1 class="card-title border-bottom pb-3 mb-4">GPX→KML変換ツール V2.4</h1>
+				
+				<div class="card border-2 border-dashed" id="dropZone" style="border-color: #ccc !important; background-color: #fafafa;">
+					<div class="card-body text-center py-5">
+						<p class="mb-3"><b>📁 GPXファイルをドロップするか、下のボタンで選択してください</b></p>
+						<div class="file-input-wrapper">
+							<input type="file" class="form-control" multiple id="selfile" accept=".gpx">
+						</div>
+					</div>
+				</div>
+
+				<div class="card mb-3" id="statsPanel" style="display: none;">
+					<div class="card-body">
+						<h3 class="card-title">📊 GPXファイル統計情報</h3>
+						<div class="stats-grid" id="statsGrid">
+							<!-- 統計情報がここに表示されます -->
+						</div>
+						<div class="elevation-profile mt-4" id="elevationProfile" style="display: none;">
+							<h4 class="text-primary">📈 標高プロファイル</h4>
+							<canvas id="elevationCanvas" class="img-fluid"></canvas>
+						</div>
+					</div>
+				</div>
+
+				<div class="text-center mb-3" id="saveButtonTop" style="display: none;">
+					<a id="getLocalTop" href="#" onClick="saveFile()" class="btn btn-success btn-lg">💾 変換したKMLファイルを保存</a>
+				</div>
+			</div>
+		</div>
+
+				<div class="alert alert-warning" id="batchProgress" style="display: none;">
+					<h5 class="alert-heading">📦 一括変換中...</h5>
+					<div class="progress mb-2">
+						<div class="progress-bar progress-bar-striped progress-bar-animated" id="progressFill" role="progressbar" style="width: 0%">0%</div>
+					</div>
+					<div class="batch-status" id="batchStatus">準備中...</div>
+				</div>
+			</div>
+		</div>
 		
-		<div class="drop-zone" id="dropZone">
-			<p><b>📁 GPXファイルをドロップするか、下のボタンで選択してください</b></p>
-			<div class="file-input-wrapper">
-				<input type="file" multiple id="selfile" accept=".gpx">
-			</div>
-		</div>
+	<div class="container mt-4">
+		<div class="card shadow-sm mb-4">
+			<div class="card-body">
+				<form name="entFil">
+					<div class="mb-3">
+						<label for="read_txt" class="form-label"><b>入力ファイル（GPX）</b></label>
+						<textarea name="read_txt" id="read_txt" class="form-control font-monospace" rows="8" readonly></textarea>
+					</div>
+				</form>
 
-		<div class="stats-panel" id="statsPanel">
-			<h3 style="margin-top: 0;">📊 GPXファイル統計情報</h3>
-			<div class="stats-grid" id="statsGrid">
-				<!-- 統計情報がここに表示されます -->
+				<form name="exprtFil">
+					<div class="mb-3">
+						<label for="wrt_txt" class="form-label"><b>出力ファイル（KML）</b></label>
+						<textarea name="wrt_txt" id="wrt_txt" class="form-control font-monospace" rows="8" readonly></textarea>
+					</div>
+				</form>
 			</div>
-			<div class="elevation-profile" id="elevationProfile" style="display: none;">
-				<h4>📈 標高プロファイル</h4>
-				<canvas id="elevationCanvas"></canvas>
-			</div>
-		</div>
-
-		<div style="text-align: center; margin: 20px 0; display: none;" id="saveButtonTop">
-			<a id="getLocalTop" href="#" onClick="saveFile()" class="save-button">💾 変換したKMLファイルを保存</a>
-		</div>
-
-		<div class="batch-progress" id="batchProgress">
-			<h3 style="margin-top: 0;">📦 一括変換中...</h3>
-			<div class="progress-bar">
-				<div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
-			</div>
-			<div class="batch-status" id="batchStatus">準備中...</div>
 		</div>
 	</div>
-	<div class="container">
-		<form name="entFil">
-			<div>
-				<label for="read_txt"><b>入力ファイル（GPX）</b></label> <br>
-				<textarea name="read_txt" id="read_txt" rows="8" readonly></textarea><br>
+
+	<div class="container mt-4">
+		<div class="card shadow-sm mb-4">
+			<div class="card-body">
+
+				<h5 class="text-danger mb-3">🞛 ラインの色:</h5>
+				<form name="selbttn1" class="mb-4">
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="color1" value="ff0000ff" onchange="updateColorFromRadio()" checked id="colorRed">
+						<label class="form-check-label" for="colorRed"><span style="color:#ff0000"><b>赤</b></span></label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="color1" value="ffff0000" onchange="updateColorFromRadio()" id="colorBlue">
+						<label class="form-check-label" for="colorBlue"><span style="color:#0000ff"><b>青</b></span></label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="color1" value="ffd355ba" onchange="updateColorFromRadio()" id="colorPurple">
+						<label class="form-check-label" for="colorPurple"><span style="color:#ba55d3"><b>紫</b></span></label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="color1" value="ff000000" onchange="updateColorFromRadio()" id="colorBlack">
+						<label class="form-check-label" for="colorBlack"><span style="color:#000000"><b>黒</b></span></label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="color1" value="random" onchange="updateColorFromRadio()" onclick="if(this.checked) generateNewRandomColor()" id="colorRandomRadio">
+						<label class="form-check-label" for="colorRandomRadio"><b>ランダム</b></label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="color1" value="custom" onchange="updateColorFromRadio()" id="colorCustomRadio">
+						<label class="form-check-label" for="colorCustomRadio"><b>カスタム</b></label>
+					</div>
+					<div class="color-picker-wrapper ms-3">
+						<input type="color" class="form-control form-control-color" id="colorPicker" value="#ff0000" onchange="updateColorFromPicker()" title="色を選択">
+					</div>
+					<div class="mt-3">
+						<label for="WoL" class="form-label text-danger">🞛 ラインの太さ:</label>
+						<input type="number" class="form-control d-inline-block" id="WoL" min="0" max="10" value="3" style="width: 100px;" onchange="mke_KLM(); saveSettings();">
+					</div>
+				</form>
+				
+				<h5 class="text-danger mb-3">🞛 トラック端マーカー：</h5>
+				<form name="selbttn2" class="mb-4">
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="Icon" value="all" onchange="mke_KLM(); saveSettings();" id="iconAll">
+						<label class="form-check-label" for="iconAll">全て表示する</label>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="Icon" value="se" onchange="mke_KLM(); saveSettings();" id="iconSe">
+						<label class="form-check-label" for="iconSe">始点と終点のみ表示</label>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="Icon" value="no" onchange="mke_KLM(); saveSettings();" checked id="iconNo">
+						<label class="form-check-label" for="iconNo">表示しない</label>
+					</div>
+				</form>
+				
+				<h5 class="text-danger mb-3">🞛 ウェイポイント(地名)マーカー：</h5>
+				<form name="selbttn3" class="mb-4">
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="Icon2" value="on" onchange="mke_KLM(); saveSettings();" id="wpOn">
+						<label class="form-check-label" for="wpOn">表示する</label>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="Icon2" value="off" onchange="mke_KLM(); saveSettings();" checked id="wpOff">
+						<label class="form-check-label" for="wpOff">表示しない</label>
+					</div>
+				</form>
+
+				<h5 class="text-danger mb-3">🞛 ウェイポイントアイコン：</h5>
+				<form name="selbttn4" class="mb-4">
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="Icon3" value="609.png" onchange="mke_KLM(); saveSettings();" checked id="icon609">
+						<label class="form-check-label" for="icon609">
+							<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/609.png" class="icon-preview">
+						</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="Icon3" value="097.png" onchange="mke_KLM(); saveSettings();" id="icon097">
+						<label class="form-check-label" for="icon097">
+							<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/097.png" class="icon-preview">
+						</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="Icon3" value="dot.png" onchange="mke_KLM(); saveSettings();" id="icondot">
+						<label class="form-check-label" for="icondot">
+							<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/dot.png" class="icon-preview">
+						</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="Icon3" value="817.png" onchange="mke_KLM(); saveSettings();" id="icon817">
+						<label class="form-check-label" for="icon817">
+							<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/817.png" class="icon-preview">
+						</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="Icon3" value="088.png" onchange="mke_KLM(); saveSettings();" id="icon088">
+						<label class="form-check-label" for="icon088">
+							<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/088.png" class="icon-preview">
+						</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="Icon3" value="089.png" onchange="mke_KLM(); saveSettings();" id="icon089">
+						<label class="form-check-label" for="icon089">
+							<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/089.png" class="icon-preview">
+						</label>
+					</div>
+				</form>
+
+				<h5 class="text-danger mb-3">🞛 距離マーカー：</h5>
+				<form name="selbttn5" class="mb-4">
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="DistanceMarker" value="off" onchange="mke_KLM(); saveSettings();" checked id="distOff">
+						<label class="form-check-label" for="distOff">表示しない</label>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="DistanceMarker" value="1km" onchange="mke_KLM(); saveSettings();" id="dist1km">
+						<label class="form-check-label" for="dist1km">1kmごと</label>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="DistanceMarker" value="2km" onchange="mke_KLM(); saveSettings();" id="dist2km">
+						<label class="form-check-label" for="dist2km">2kmごと</label>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="DistanceMarker" value="5km" onchange="mke_KLM(); saveSettings();" id="dist5km">
+						<label class="form-check-label" for="dist5km">5kmごと</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="radio" name="DistanceMarker" value="custom" onchange="mke_KLM(); saveSettings();" id="distMarkerCustomRadio">
+						<label class="form-check-label" for="distMarkerCustomRadio">カスタム:</label>
+						<input type="number" class="form-control d-inline-block ms-2" id="distMarkerInterval" min="0.1" max="100" step="0.1" value="1" style="width: 100px;" onchange="mke_KLM(); saveSettings();">
+						<span class="ms-2">km</span>
+					</div>
+				</form>
+
+				<h5 class="text-danger mb-3">🞛 ポイントの間引き（データ量削減）：</h5>
+				<form name="selbttn6" class="mb-4">
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="Simplify" value="off" onchange="mke_KLM(); saveSettings();" checked id="simplifyOff">
+						<label class="form-check-label" for="simplifyOff">間引きしない</label>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="Simplify" value="2" onchange="mke_KLM(); saveSettings();" id="simplify2">
+						<label class="form-check-label" for="simplify2">2点ごと（50%削減）</label>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="Simplify" value="3" onchange="mke_KLM(); saveSettings();" id="simplify3">
+						<label class="form-check-label" for="simplify3">3点ごと（67%削減）</label>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="Simplify" value="5" onchange="mke_KLM(); saveSettings();" id="simplify5">
+						<label class="form-check-label" for="simplify5">5点ごと（80%削減）</label>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="Simplify" value="10" onchange="mke_KLM(); saveSettings();" id="simplify10">
+						<label class="form-check-label" for="simplify10">10点ごと（90%削減）</label>
+					</div>
+				</form>
+
+				<div class="text-center mb-3">
+					<button class="btn btn-secondary" onclick="resetSettings()">🔄 設定をリセット</button>
+				</div>
+
+				<div class="text-center mb-3" id="saveButtonBottom" style="display: none;">
+					<a id="getLocal" href="#" onClick="saveFile()" class="btn btn-success btn-lg">💾 変換したKMLファイルを保存</a>
+				</div>
 			</div>
-		</form>
-
-		<form name="exprtFil">
-			<div>
-				<label for="wrt_txt"><b>出力ファイル（KML）</b></label> <br>
-				<textarea name="wrt_txt" id="wrt_txt" rows="8" readonly></textarea><br>
-			</div>
-		</form>
-	</div>
-
-	<div class="container">
-
-		<div class="section-title">🞛 ラインの色:</div>
-		<form name="selbttn1">
-			<label><input type="radio" name="color1" value="ff0000ff" onchange="updateColorFromRadio()" checked> <span style="color:#ff0000"><b>赤</b></span></label>
-			<label><input type="radio" name="color1" value="ffff0000" onchange="updateColorFromRadio()" > <span style="color:#0000ff"><b>青</b></span></label>
-			<label><input type="radio" name="color1" value="ffd355ba" onchange="updateColorFromRadio()" > <span style="color:#ba55d3"><b>紫</b></span></label>
-			<label><input type="radio" name="color1" value="ff000000" onchange="updateColorFromRadio()" > <span style="color:#000000"><b>黒</b></span></label>
-			<label><input type="radio" name="color1" value="custom" onchange="updateColorFromRadio()" id="colorCustomRadio"> <span><b>カスタム</b></span></label>
-			<div class="color-picker-wrapper">
-				<input type="color" id="colorPicker" value="#ff0000" onchange="updateColorFromPicker()">
-			</div>
-			<br>
-			<div class="section-title" style="display: inline-block; margin-top: 10px;">🞛 ラインの太さ:</div>
-			<input type="number" id="WoL" min="0" max="10" value="3" onchange="mke_KLM(); saveSettings();">
-		</form>
-		<div class="section-title">🞛 トラック端マーカー：</div>
-		<form name="selbttn2">
-			<label><input type="radio" name="Icon" value="all" onchange="mke_KLM(); saveSettings();"> 全て表示する</label>
-			<label><input type="radio" name="Icon" value="se" onchange="mke_KLM(); saveSettings();"> 始点と終点のみ表示</label>
-			<label><input type="radio" name="Icon" value="no" onchange="mke_KLM(); saveSettings();" checked > 表示しない</label>
-		</form>
-		
-		<div class="section-title">🞛 ウェイポイント(地名)マーカー：</div>
-		<form name="selbttn3">
-			<label><input type="radio" name="Icon2" value="on" onchange="mke_KLM(); saveSettings();" > 表示する</label>
-			<label><input type="radio" name="Icon2" value="off" onchange="mke_KLM(); saveSettings();" checked > 表示しない</label>
-		</form>
-
-		<div class="section-title">🞛 ウェイポイントアイコン：</div>
-		<form name="selbttn4">
-			<label><input type="radio" name="Icon3" value="609.png" onchange="mke_KLM(); saveSettings();" checked>
-				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/609.png" class="icon-preview"></label>
-			<label><input type="radio" name="Icon3" value="097.png" onchange="mke_KLM(); saveSettings();" >
-				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/097.png" class="icon-preview"></label>
-			<label><input type="radio" name="Icon3" value="dot.png" onchange="mke_KLM(); saveSettings();" >
-				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/dot.png" class="icon-preview"></label>
-			<label><input type="radio" name="Icon3" value="817.png" onchange="mke_KLM(); saveSettings();" >
-				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/817.png" class="icon-preview"></label>
-			<label><input type="radio" name="Icon3" value="088.png" onchange="mke_KLM(); saveSettings();" >
-				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/088.png" class="icon-preview"></label>
-			<label><input type="radio" name="Icon3" value="089.png" onchange="mke_KLM(); saveSettings();" >
-				<img src="https://maps.gsi.go.jp/portal/sys/v4/symbols/089.png" class="icon-preview"></label>
-		</form>
-
-		<div class="section-title">🞛 距離マーカー：</div>
-		<form name="selbttn5">
-			<label><input type="radio" name="DistanceMarker" value="off" onchange="mke_KLM(); saveSettings();" checked> 表示しない</label>
-			<label><input type="radio" name="DistanceMarker" value="1km" onchange="mke_KLM(); saveSettings();"> 1kmごと</label>
-			<label><input type="radio" name="DistanceMarker" value="2km" onchange="mke_KLM(); saveSettings();"> 2kmごと</label>
-			<label><input type="radio" name="DistanceMarker" value="5km" onchange="mke_KLM(); saveSettings();"> 5kmごと</label>
-			<label><input type="radio" name="DistanceMarker" value="custom" onchange="mke_KLM(); saveSettings();" id="distMarkerCustomRadio"> カスタム:</label>
-			<input type="number" id="distMarkerInterval" min="0.1" max="100" step="0.1" value="1" style="width: 80px; margin-left: 5px;" onchange="mke_KLM(); saveSettings();"> km
-		</form>
-
-		<div class="section-title">🞛 ポイントの間引き（データ量削減）：</div>
-		<form name="selbttn6">
-			<label><input type="radio" name="Simplify" value="off" onchange="mke_KLM(); saveSettings();" checked> 間引きしない</label>
-			<label><input type="radio" name="Simplify" value="2" onchange="mke_KLM(); saveSettings();"> 2点ごと（50%削減）</label>
-			<label><input type="radio" name="Simplify" value="3" onchange="mke_KLM(); saveSettings();"> 3点ごと（67%削減）</label>
-			<label><input type="radio" name="Simplify" value="5" onchange="mke_KLM(); saveSettings();"> 5点ごと（80%削減）</label>
-			<label><input type="radio" name="Simplify" value="10" onchange="mke_KLM(); saveSettings();"> 10点ごと（90%削減）</label>
-		</form>
-
-		<div class="settings-buttons">
-			<button class="settings-button" onclick="saveSettings()">💾 設定を保存</button>
-			<button class="settings-button secondary" onclick="loadSettings(true)">📂 設定を読み込み</button>
-			<button class="settings-button secondary" onclick="resetSettings()">🔄 設定をリセット</button>
-		</div>
-
-		<div style="text-align: center; margin: 30px 0; display: none;" id="saveButtonBottom">
-			<a id="getLocal" href="#" onClick="saveFile()" class="save-button">💾 変換したKMLファイルを保存</a>
 		</div>
 	</div>
 
@@ -386,6 +350,8 @@ var trkpArr = [0, ""]; // trkptArr = [pointer, "lon,lat,ele"]
 var flgErr1 = 1; // エラーフラグ
 var WpList = []; // ウェイポイント(地名)配列 [ [ name, lat, lon ], ... ]
 var statsData = {}; // 統計情報データ
+var globalTrkNamArr = []; // トラック名配列（ファイル名生成用）
+var trkNamArr = []; // トラック名配列（ファイル名生成用）
 
 
 //ファイル読み込み（ダイアログでファイルが選択かドロップされた時）
@@ -451,6 +417,8 @@ obj1.addEventListener("change",function(evt){
 
 function after_file_read(readTxt, writeFilNam){
 	document.entFil.read_txt.value = readTxt;  //テキストエリアに表示
+	// グローバル変数をリセット
+	window.trkNamArr = [];
 	let fieChk = 0;
 	pointer = readTxt.indexOf("</gpx>");
 	( pointer !== -1 ) ? fieChk = fieChk: fieChk++;
@@ -571,7 +539,7 @@ function generateDistanceMarkers(trkStr, trackName, intervalKm) {
 				markerName = Math.round(nextMarkerDistance) + "km";
 			}
 			
-			writeTex += '  <Placemark>\n    <name>' + trackName + ' ' + markerName + '</name>\n';
+			writeTex += '  <Placemark>\n    <name>' + markerName + '</name>\n';
 			writeTex += '    <styleUrl>#DistMarker</styleUrl>\n';
 			writeTex += '    <Point>\n      <altitudeMode>relativeToGround</altitudeMode>\n';
 			writeTex += '      <coordinates>' + currentPoint.lon + ',' + currentPoint.lat + ',' + currentPoint.ele + '</coordinates>\n';
@@ -643,7 +611,17 @@ function mke_KLM() {
 			NofTrk++;
 			pointer = readTxt.indexOf("<name>", pointer);
 			(pointer !== -1) ? trkName = readTxt.substring( pointer +6, readTxt.indexOf("</name>",pointer) ): trkName = "";
-			trkNamArr.push(trkName);		
+			trkNamArr.push(trkName);
+			// グローバル変数にも保存（ファイル名生成用）
+			if (!window.trkNamArr) {
+				window.trkNamArr = [];
+			}
+			window.trkNamArr.push(trkName);
+			// グローバル変数にも保存（ファイル名生成用）
+			if (typeof window.trkNamArr === 'undefined') {
+				window.trkNamArr = [];
+			}
+			window.trkNamArr.push(trkName);		
 			let pointerNum = readTxt.indexOf("<number>", pointer); // V2.2
 			if ((pointerNum < pointer2) || (pointer2 == -1)) { // V2.2
 				if (pointerNum !== -1) {
@@ -754,7 +732,7 @@ function saveFile() {
 // ファイル出力
 	// 統計情報パネルが表示されている場合は、GPXファイルは読み込まれている
 	let statsPanel = document.getElementById("statsPanel");
-	let isStatsVisible = statsPanel && statsPanel.classList.contains("active");
+	let isStatsVisible = statsPanel && statsPanel.style.display !== "none";
 	
 	// より確実なエラーチェック
 	if (readTxt === "" || writeFilNam === "") {
@@ -777,7 +755,22 @@ function saveFile() {
 		}
 	}
 	
-	let title = writeFilNam + ".kml"; // 出力ファイル名
+	// ファイル名を生成（GPXの名前_地名.kml）
+	let trackName = "";
+	if (window.trkNamArr && window.trkNamArr.length > 0) {
+		// 最初のトラック名を使用（複数トラックがある場合は最初のもの）
+		trackName = window.trkNamArr[0];
+		// トラック名が空の場合はデフォルト名を使用
+		if (trackName === "") {
+			trackName = "track";
+		}
+	} else {
+		// トラック名が取得できない場合はデフォルト名を使用
+		trackName = "track";
+	}
+	// ファイル名に使用できない文字を置換
+	trackName = trackName.replace(/[<>:"/\\|?*]/g, "_");
+	let title = writeFilNam + "_" + trackName + ".kml"; // 出力ファイル名
 	let stringObject = new Blob( [writeTex], { type: "text/plain" } );
 	let objectURL = window.URL.createObjectURL( stringObject );
 	
@@ -1108,6 +1101,7 @@ function displayStats() {
 		}
 	}
 	
+	panel.style.display = "block";
 	panel.classList.add("active");
 	
 	// 上部の保存ボタンも表示
@@ -1130,6 +1124,7 @@ function hideStats() {
 	let panel = document.getElementById("statsPanel");
 	let saveButtonTop = document.getElementById("saveButtonTop");
 	let elevationProfile = document.getElementById("elevationProfile");
+	panel.style.display = "none";
 	panel.classList.remove("active");
 	
 	// 上部の保存ボタンも非表示
@@ -1331,9 +1326,47 @@ function updateColorFromPicker() {
 	saveSettings();
 }
 
+// 新しいランダム色を生成する関数
+function generateNewRandomColor() {
+	let randomRadio = document.getElementById("colorRandomRadio");
+	if (!randomRadio || !randomRadio.checked) {
+		return;
+	}
+	
+	// 新しいランダム色を生成
+	let r = Math.floor(Math.random() * 256);
+	let g = Math.floor(Math.random() * 256);
+	let b = Math.floor(Math.random() * 256);
+	let htmlColor = "#" + 
+		("0" + r.toString(16)).slice(-2) +
+		("0" + g.toString(16)).slice(-2) +
+		("0" + b.toString(16)).slice(-2);
+	document.getElementById("colorPicker").value = htmlColor;
+	
+	// 生成したランダム色をKML形式で保存
+	let kmlColor = "ff" + 
+		("0" + b.toString(16)).slice(-2) +
+		("0" + g.toString(16)).slice(-2) +
+		("0" + r.toString(16)).slice(-2);
+	randomRadio.setAttribute("data-random-color", kmlColor);
+	
+	// KMLを再生成して設定を保存
+	mke_KLM();
+	saveSettings();
+}
+
 function updateColorFromRadio() {
 	let selected = document.querySelector('input[name="color1"]:checked');
-	if (selected && selected.value !== "custom") {
+	if (!selected) {
+		mke_KLM();
+		saveSettings();
+		return;
+	}
+	
+	if (selected.value === "random") {
+		// ランダム色が選択された場合、ランダム色を生成してカラーピッカーに表示
+		generateNewRandomColor();
+	} else if (selected.value !== "custom") {
 		// プリセット色が選択された場合、カラーピッカーを更新
 		let kmlColor = selected.value;
 		// KML形式（AABBGGRR）からHTMLカラーコード（#RRGGBB）に変換
@@ -1351,28 +1384,46 @@ function updateColorFromRadio() {
 }
 
 function getLineColor() {
-	let selected = document.querySelector('input[name="color1"]:checked');
-	if (selected && selected.value === "custom") {
-		// カスタム色の場合、カラーピッカーから取得
-		let colorPicker = document.getElementById("colorPicker");
-		let color = colorPicker.value;
-		let r = parseInt(color.substr(1, 2), 16);
-		let g = parseInt(color.substr(3, 2), 16);
-		let b = parseInt(color.substr(5, 2), 16);
-		return "ff" + 
-			("0" + b.toString(16)).slice(-2) +
-			("0" + g.toString(16)).slice(-2) +
-			("0" + r.toString(16)).slice(-2);
-	}
-	return selected ? selected.value : "ff0000ff";
+	// ラジオボタンの選択種別に関わらず、常にカラーピッカーの色を使用
+	let colorPicker = document.getElementById("colorPicker");
+	let color = colorPicker.value;
+	let r = parseInt(color.substr(1, 2), 16);
+	let g = parseInt(color.substr(3, 2), 16);
+	let b = parseInt(color.substr(5, 2), 16);
+	return "ff" + 
+		("0" + b.toString(16)).slice(-2) +
+		("0" + g.toString(16)).slice(-2) +
+		("0" + r.toString(16)).slice(-2);
 }
 
 // 設定の保存/読み込み機能
 function saveSettings() {
+	let selectedColor = document.querySelector('input[name="color1"]:checked');
+	let lineColorMode = selectedColor ? selectedColor.value : "ff0000ff";
+	let colorPickerValue = document.getElementById("colorPicker").value;
+	
+	// ランダム色が選択されている場合、現在のランダム色を保存
+	let randomColorValue = null;
+	if (lineColorMode === "random" && selectedColor) {
+		// ランダム色を生成（保存時に決定）
+		let r = Math.floor(Math.random() * 256);
+		let g = Math.floor(Math.random() * 256);
+		let b = Math.floor(Math.random() * 256);
+		randomColorValue = "ff" + 
+			("0" + b.toString(16)).slice(-2) +
+			("0" + g.toString(16)).slice(-2) +
+			("0" + r.toString(16)).slice(-2);
+		// 生成した色をラジオボタンに保存
+		selectedColor.setAttribute("data-random-color", randomColorValue);
+	}
+	
+	// カラーピッカーの値は常に保存（カスタム色が選択されていない場合でも、次回カスタム色を選択した時に使えるように）
+	
 	let settings = {
 		lineColor: getLineColor(),
-		lineColorMode: document.querySelector('input[name="color1"]:checked').value,
-		colorPickerValue: document.getElementById("colorPicker").value,
+		lineColorMode: lineColorMode,
+		colorPickerValue: colorPickerValue,
+		randomColorValue: randomColorValue, // ランダム色の値を保存
 		lineWidth: document.getElementById("WoL").value,
 		trackIcon: document.selbttn2.Icon.value,
 		waypointIcon: document.selbttn3.Icon2.value,
@@ -1384,7 +1435,6 @@ function saveSettings() {
 	
 	try {
 		localStorage.setItem('gpx2kml_settings', JSON.stringify(settings));
-		console.log('設定を保存しました');
 	} catch (e) {
 		console.error('設定の保存に失敗しました:', e);
 	}
@@ -1400,13 +1450,69 @@ function loadSettings(showMessage) {
 			
 			// カラー設定
 			if (settings.lineColorMode === "custom") {
-				document.getElementById("colorCustomRadio").checked = true;
-				document.getElementById("colorPicker").value = settings.colorPickerValue || "#ff0000";
+				// カスタム色が選択されていた場合
+				// まず他のラジオボタンの選択を解除
+				let allColorRadios = document.querySelectorAll('input[name="color1"]');
+				allColorRadios.forEach(radio => radio.checked = false);
+				
+				// カスタムラジオボタンを選択
+				let customRadio = document.getElementById("colorCustomRadio");
+				if (customRadio) {
+					customRadio.checked = true;
+				} else {
+					// フォールバック: value="custom"のラジオボタンを探す
+					let customRadioByValue = document.querySelector('input[name="color1"][value="custom"]');
+					if (customRadioByValue) {
+						customRadioByValue.checked = true;
+					}
+				}
+				
+				// カラーピッカーの値を復元
+				if (settings.colorPickerValue) {
+					document.getElementById("colorPicker").value = settings.colorPickerValue;
+				} else {
+					document.getElementById("colorPicker").value = "#ff0000";
+				}
+				
+				// KMLを再生成
+				mke_KLM();
+			} else if (settings.lineColorMode === "random") {
+				// ランダム色が選択されていた場合
+				// まず他のラジオボタンの選択を解除
+				let allColorRadios = document.querySelectorAll('input[name="color1"]');
+				allColorRadios.forEach(radio => radio.checked = false);
+				
+				// ランダムラジオボタンを選択
+				let randomRadio = document.getElementById("colorRandomRadio");
+				if (randomRadio) {
+					randomRadio.checked = true;
+					// 保存されたランダム色を復元
+					if (settings.randomColorValue) {
+						randomRadio.setAttribute("data-random-color", settings.randomColorValue);
+					}
+				} else {
+					// フォールバック: value="random"のラジオボタンを探す
+					let randomRadioByValue = document.querySelector('input[name="color1"][value="random"]');
+					if (randomRadioByValue) {
+						randomRadioByValue.checked = true;
+						if (settings.randomColorValue) {
+							randomRadioByValue.setAttribute("data-random-color", settings.randomColorValue);
+						}
+					}
+				}
+				
+				// KMLを再生成
+				mke_KLM();
 			} else {
+				// プリセット色が選択されていた場合
 				let radio = document.querySelector('input[name="color1"][value="' + settings.lineColorMode + '"]');
 				if (radio) {
 					radio.checked = true;
 					updateColorFromRadio();
+				}
+				// カラーピッカーの値は常に復元（カスタム色が選択されていない場合でも、次回カスタム色を選択した時に使えるように）
+				if (settings.colorPickerValue) {
+					document.getElementById("colorPicker").value = settings.colorPickerValue;
 				}
 			}
 			
@@ -1442,40 +1548,38 @@ function loadSettings(showMessage) {
 				}
 			}
 			
+			// ポイントの間引き
+			if (settings.simplify) {
+				let radio = document.querySelector('input[name="Simplify"][value="' + settings.simplify + '"]');
+				if (radio) radio.checked = true;
+			}
+			
 			mke_KLM();
-			if (showMessage) {
-				alert('設定を読み込みました');
-			}
-		} else {
-			if (showMessage) {
-				alert('保存された設定がありません');
-			}
 		}
 	} catch (e) {
 		console.error('設定の読み込みに失敗しました:', e);
-		if (showMessage) {
-			alert('設定の読み込みに失敗しました');
-		}
 	}
 }
 
 function resetSettings() {
-	if (confirm('設定をリセットしますか？')) {
-		// デフォルト値に戻す
-		document.querySelector('input[name="color1"][value="ff0000ff"]').checked = true;
-		document.getElementById("colorPicker").value = "#ff0000";
-		document.getElementById("WoL").value = 3;
-		document.querySelector('input[name="Icon"][value="no"]').checked = true;
-		document.querySelector('input[name="Icon2"][value="off"]').checked = true;
-		document.querySelector('input[name="Icon3"][value="609.png"]').checked = true;
-		document.querySelector('input[name="DistanceMarker"][value="off"]').checked = true;
-		document.getElementById("distMarkerInterval").value = 1;
-		document.querySelector('input[name="Simplify"][value="off"]').checked = true;
-		
-		mke_KLM();
-		saveSettings();
-		alert('設定をリセットしました');
+	// デフォルト値に戻す
+	document.querySelector('input[name="color1"][value="ff0000ff"]').checked = true;
+	document.getElementById("colorPicker").value = "#ff0000";
+	// ランダム色の保存値をクリア
+	let randomRadio = document.getElementById("colorRandomRadio");
+	if (randomRadio) {
+		randomRadio.removeAttribute("data-random-color");
 	}
+	document.getElementById("WoL").value = 3;
+	document.querySelector('input[name="Icon"][value="no"]').checked = true;
+	document.querySelector('input[name="Icon2"][value="off"]').checked = true;
+	document.querySelector('input[name="Icon3"][value="609.png"]').checked = true;
+	document.querySelector('input[name="DistanceMarker"][value="off"]').checked = true;
+	document.getElementById("distMarkerInterval").value = 1;
+	document.querySelector('input[name="Simplify"][value="off"]').checked = true;
+	
+	mke_KLM();
+	saveSettings();
 }
 
 // 複数ファイルの一括変換
@@ -1484,7 +1588,7 @@ function batchConvertFiles(files) {
 	let progressFill = document.getElementById("progressFill");
 	let batchStatus = document.getElementById("batchStatus");
 	
-	progressPanel.classList.add("active");
+	progressPanel.style.display = "block";
 	
 	let totalFiles = files.length;
 	let processedFiles = 0;
@@ -1496,7 +1600,7 @@ function batchConvertFiles(files) {
 		if (index >= totalFiles) {
 			// すべてのファイル処理完了
 			downloadBatchFiles(kmlFiles);
-			progressPanel.classList.remove("active");
+			progressPanel.style.display = "none";
 			alert(`${totalFiles} 個のKMLファイルをダウンロードしました`);
 			return;
 		}
@@ -1591,5 +1695,7 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 </script>
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
