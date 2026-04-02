@@ -489,6 +489,15 @@ function get_trkptLLE(entStr, pointer){
 	return trkpArr = [pointer, strDat];
 }
 
+function escapeXml(value) {
+	return String(value)
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&apos;");
+}
+
 // 距離マーカーを生成する関数
 function generateDistanceMarkers(trkStr, trackName, intervalKm) {
 	let points = [];
@@ -546,7 +555,7 @@ function generateDistanceMarkers(trkStr, trackName, intervalKm) {
 				markerName = Math.round(nextMarkerDistance) + "km";
 			}
 			
-			writeTex += '  <Placemark>\n    <name>' + markerName + '</name>\n';
+			writeTex += '  <Placemark>\n    <name>' + escapeXml(markerName) + '</name>\n';
 			writeTex += '    <styleUrl>#DistMarker</styleUrl>\n';
 			writeTex += '    <Point>\n      <altitudeMode>relativeToGround</altitudeMode>\n';
 			writeTex += '      <coordinates>' + currentPoint.lon + ',' + currentPoint.lat + ',' + currentPoint.ele + '</coordinates>\n';
@@ -589,7 +598,7 @@ function mke_KLM() {
 
   // ヘッダとラインスタイルの記述
 	writeTex = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n';
-	writeTex += '  <Name>' + writeFilNam + '</Name>\n';
+	writeTex += '  <Name>' + escapeXml(writeFilNam) + '</Name>\n';
 	writeTex += '  <Style id="L1">\n    <LineStyle>\n      <color>' + LinColor + '</color>\n';
 	writeTex += '      <width>' + LinWid + '</width>\n';
 	writeTex += '    </LineStyle>\n  </Style>\n';
@@ -599,7 +608,7 @@ function mke_KLM() {
 		writeTex += '        <href>https://maps.gsi.go.jp/portal/sys/v4/symbols/' + WpSmb + '</href>\n      </Icon>\n';
 		writeTex += '    <scale>1.0</scale>\n    </IconStyle>\n  </Style>\n';
 		for ( let i = 0; i < WpList.length ; i++ ){
-			writeTex += '  <Placemark>\n    <name>' + WpList[ i ][0] + '</name>\n';
+			writeTex += '  <Placemark>\n    <name>' + escapeXml(WpList[ i ][0]) + '</name>\n';
 			writeTex += '      <styleUrl>#WpIcon</styleUrl>\n';
 			writeTex += '    <Point>\n      <altitudeMode>relativeToGround</altitudeMode>\n';
 			writeTex += '      <coordinates>' + WpList[ i ][2] + ',' + WpList[ i ][1] + '</coordinates>\n';
@@ -691,13 +700,13 @@ function mke_KLM() {
 			get_trkptLLE( strTrk, strTrk.lastIndexOf( "<trkpt" ) -1 );
 			let strIcEp = trkpArr[1];
 			if ( iconSet == "all" || trkFlgArr[i] == "s" || trkFlgArr[i] == "b" ){
-				writeTex += '  <Placemark>\n    <name>' + trkNamArr[i] + ' Start</name>\n';
+				writeTex += '  <Placemark>\n    <name>' + escapeXml(trkNamArr[i] + ' Start') + '</name>\n';
 				writeTex += '    <Point>\n      <altitudeMode>relativeToGround</altitudeMode>\n';
 				writeTex += '      <coordinates>' + strIcSp + '</coordinates>\n';
 				writeTex += '    </Point>\n   </Placemark>\n';
 			}
 			if ( iconSet == "all" || trkFlgArr[i] == "e" || trkFlgArr[i] == "b" ){
-				writeTex += '  <Placemark>\n    <name>' + trkNamArr[i] + ' End</name>\n';
+				writeTex += '  <Placemark>\n    <name>' + escapeXml(trkNamArr[i] + ' End') + '</name>\n';
 				writeTex += '    <Point>\n      <altitudeMode>relativeToGround</altitudeMode>\n';
 				writeTex += '      <coordinates>' + strIcEp + '</coordinates>\n';
 				writeTex += '    </Point>\n   </Placemark>\n';
@@ -710,7 +719,7 @@ function mke_KLM() {
 		}
 		
  // ラインの記述
-		writeTex += '  <Placemark>\n    <name>' + trkNamArr[i] + '</name>\n';
+		writeTex += '  <Placemark>\n    <name>' + escapeXml(trkNamArr[i]) + '</name>\n';
 		writeTex += '    <styleUrl>#L1</styleUrl>\n    <LineString>\n      <altitudeMode></altitudeMode>\n      <coordinates>\n';
 		let SubPointer = 0;
 		let pointCount = 0;
