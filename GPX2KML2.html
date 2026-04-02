@@ -169,22 +169,37 @@
         </section>
       </div>
 
-      <section class="glass rounded-2xl border border-white/10 bg-white/[0.05] p-6 shadow-soft backdrop-blur">
+      <section id="conversionSettings" class="glass rounded-2xl border border-white/10 bg-white/[0.05] p-6 shadow-soft backdrop-blur">
         <div class="space-y-5 text-sm">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+            <button id="saveKmlButton" type="button" class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-md transition hover:brightness-110 active:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
+              <svg class="h-4 w-4 shrink-0" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              変換したKMLファイルを保存
+            </button>
+            <button id="resetSettingsButton" type="button" class="btn-reset-settings inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-md transition hover:brightness-110 active:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 sm:flex-initial sm:min-w-[11rem]">
+              <svg class="h-4 w-4 shrink-0" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              設定をリセット
+            </button>
+          </div>
+
           <div>
             <h4 class="mb-2 font-bold text-slate-200">ライン色</h4>
             <div class="flex flex-wrap items-center gap-2">
-              <label class="surface-dark rounded-lg border border-white/10 bg-slate-900/60 px-2 py-1"><input type="radio" name="lineColor" checked> 赤</label>
-              <label class="surface-dark rounded-lg border border-white/10 bg-slate-900/60 px-2 py-1"><input type="radio" name="lineColor"> 青</label>
-              <label class="surface-dark rounded-lg border border-white/10 bg-slate-900/60 px-2 py-1"><input type="radio" name="lineColor"> 紫</label>
-              <label class="surface-dark rounded-lg border border-white/10 bg-slate-900/60 px-2 py-1"><input type="radio" name="lineColor"> 黒</label>
-              <label class="surface-dark rounded-lg border border-white/10 bg-slate-900/60 px-2 py-1"><input type="radio" name="lineColor"> ランダム</label>
-              <label class="surface-dark rounded-lg border border-white/10 bg-slate-900/60 px-2 py-1"><input type="radio" name="lineColor"> カスタム</label>
-              <input type="color" value="#ef4444" class="h-9 w-12 rounded-lg border border-white/20 bg-slate-900">
+              <label class="surface-dark rounded-lg border border-white/10 bg-slate-900/60 px-2 py-1"><input type="radio" name="lineColor" value="ff0000ff" checked> 赤</label>
+              <label class="surface-dark rounded-lg border border-white/10 bg-slate-900/60 px-2 py-1"><input type="radio" name="lineColor" value="ffff0000"> 青</label>
+              <label class="surface-dark rounded-lg border border-white/10 bg-slate-900/60 px-2 py-1"><input type="radio" name="lineColor" value="ffd355ba"> 紫</label>
+              <label class="surface-dark rounded-lg border border-white/10 bg-slate-900/60 px-2 py-1"><input type="radio" name="lineColor" value="ff000000"> 黒</label>
+              <label class="surface-dark rounded-lg border border-white/10 bg-slate-900/60 px-2 py-1"><input type="radio" name="lineColor" value="random"> ランダム</label>
+              <label class="surface-dark rounded-lg border border-white/10 bg-slate-900/60 px-2 py-1"><input type="radio" name="lineColor" value="custom"> カスタム</label>
+              <input id="colorPicker" type="color" value="#ff0000" class="h-9 w-12 rounded-lg border border-white/20 bg-slate-900">
             </div>
             <div class="mt-3 flex items-center gap-2">
               <span class="text-slate-300">太さ</span>
-              <input type="number" min="0" max="10" value="3" class="surface-dark w-20 rounded-lg border border-white/20 bg-slate-900/80 px-2 py-1">
+              <input id="lineWidthInput" type="number" min="0" max="10" value="3" class="surface-dark w-20 rounded-lg border border-white/20 bg-slate-900/80 px-2 py-1">
             </div>
           </div>
 
@@ -212,7 +227,7 @@
               <label class="block"><input type="radio" name="dist"> 1kmごと</label>
               <label class="block"><input type="radio" name="dist"> 2kmごと</label>
               <label class="block"><input type="radio" name="dist"> 5kmごと</label>
-              <label class="mt-1 inline-flex items-center gap-2"><input type="radio" name="dist"> カスタム <input type="number" value="1" step="0.1" class="surface-dark w-20 rounded-lg border border-white/20 bg-slate-900/80 px-2 py-1"> km</label>
+              <label class="mt-1 inline-flex items-center gap-2"><input type="radio" name="dist"> カスタム <input id="distMarkerInterval" type="number" value="1" step="0.1" class="surface-dark w-20 rounded-lg border border-white/20 bg-slate-900/80 px-2 py-1"> km</label>
             </div>
           </div>
 
@@ -227,10 +242,6 @@
             </div>
           </div>
 
-          <div class="pt-2">
-            <button class="mb-2 w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2 font-semibold hover:bg-white/10">設定をリセット</button>
-            <button id="saveKmlButton" class="w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-4 py-2 font-bold text-slate-950 hover:brightness-110">変換したKMLファイルを保存</button>
-          </div>
         </div>
       </section>
     </section>
@@ -257,6 +268,7 @@
     const readTxt = document.getElementById("read_txt");
     const wrtTxt = document.getElementById("wrt_txt");
     const saveKmlButton = document.getElementById("saveKmlButton");
+    const resetSettingsButton = document.getElementById("resetSettingsButton");
     const elevationCanvas = document.getElementById("elevationCanvas");
 
     let loadedFileName = "";
@@ -432,7 +444,47 @@
       ctx.clearRect(0, 0, width, height);
     }
 
+    function byteToHex2(n) {
+      return ("0" + Math.max(0, Math.min(255, n | 0)).toString(16)).slice(-2);
+    }
+
+    function htmlColorToKmlAabbggrr(hex) {
+      if (!hex || typeof hex !== "string" || hex[0] !== "#" || hex.length < 7) return "ff0000ff";
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      if ([r, g, b].some((x) => Number.isNaN(x))) return "ff0000ff";
+      return "ff" + byteToHex2(b) + byteToHex2(g) + byteToHex2(r);
+    }
+
+    function randomKmlAabbggrr() {
+      return "ff" +
+        byteToHex2(Math.floor(Math.random() * 256)) +
+        byteToHex2(Math.floor(Math.random() * 256)) +
+        byteToHex2(Math.floor(Math.random() * 256));
+    }
+
+    function getLineStyleForKml() {
+      const checked = document.querySelector('input[name="lineColor"]:checked');
+      let color = "ff0000ff";
+      if (checked) {
+        if (checked.value === "custom") {
+          color = htmlColorToKmlAabbggrr(document.getElementById("colorPicker")?.value);
+        } else if (checked.value === "random") {
+          color = randomKmlAabbggrr();
+        } else if (checked.value) {
+          color = checked.value;
+        }
+      }
+      const wEl = document.getElementById("lineWidthInput");
+      let width = parseInt(wEl?.value, 10);
+      if (!Number.isFinite(width)) width = 3;
+      width = Math.min(10, Math.max(0, width));
+      return { color, width };
+    }
+
     function buildKml(fileBaseName, points) {
+      const { color, width } = getLineStyleForKml();
       let coordinates = "";
       for (let i = 0; i < points.length; i++) {
         coordinates += `${points[i].lon},${points[i].lat},${points[i].ele} \n`;
@@ -443,8 +495,8 @@
   <Name>${escapeXml(fileBaseName)}</Name>
   <Style id="L1">
     <LineStyle>
-      <color>ff0000ff</color>
-      <width>3</width>
+      <color>${color}</color>
+      <width>${width}</width>
     </LineStyle>
   </Style>
   <Placemark>
@@ -458,6 +510,41 @@ ${coordinates}      </coordinates>
 </Document>
 </kml>
 `;
+    }
+
+    function regenerateKmlFromUi() {
+      const gpxText = readTxt.value;
+      if (!gpxText || !gpxText.includes("<gpx") || !gpxText.includes("</gpx>")) return;
+      try {
+        const points = parseTrkPoints(gpxText);
+        if (points.length < 2) return;
+        generatedKml = buildKml(loadedFileName || "track", points);
+        wrtTxt.value = generatedKml;
+      } catch (_) {}
+    }
+
+    function resetUiSettings() {
+      document.querySelectorAll('input[name="lineColor"]').forEach((r, i) => {
+        r.checked = i === 0;
+      });
+      const cp = document.getElementById("colorPicker");
+      if (cp) cp.value = "#ff0000";
+      const lw = document.getElementById("lineWidthInput");
+      if (lw) lw.value = 3;
+      document.querySelectorAll('input[name="trackEdge"]').forEach((r, i) => {
+        r.checked = i === 2;
+      });
+      document.querySelectorAll('input[name="waypoint"]').forEach((r, i) => {
+        r.checked = i === 1;
+      });
+      document.querySelectorAll('input[name="dist"]').forEach((r, i) => {
+        r.checked = i === 0;
+      });
+      const di = document.getElementById("distMarkerInterval");
+      if (di) di.value = 1;
+      document.querySelectorAll('input[name="simplify"]').forEach((r, i) => {
+        r.checked = i === 0;
+      });
     }
 
     function readFileAsText(file) {
@@ -639,6 +726,22 @@ ${coordinates}      </coordinates>
       }
       downloadKml(loadedFileName || "track", generatedKml);
     });
+
+    resetSettingsButton?.addEventListener("click", () => {
+      resetUiSettings();
+      regenerateKmlFromUi();
+    });
+
+    ["lineColor", "trackEdge", "waypoint", "dist", "simplify"].forEach((name) => {
+      document.querySelectorAll(`input[name="${name}"]`).forEach((el) => {
+        el.addEventListener("change", regenerateKmlFromUi);
+      });
+    });
+    document.getElementById("colorPicker")?.addEventListener("input", regenerateKmlFromUi);
+    const lineWidthEl = document.getElementById("lineWidthInput");
+    lineWidthEl?.addEventListener("input", regenerateKmlFromUi);
+    lineWidthEl?.addEventListener("change", regenerateKmlFromUi);
+    document.getElementById("distMarkerInterval")?.addEventListener("change", regenerateKmlFromUi);
 
     const savedTheme = getCookie("gpx2kml_theme") || "light";
     setTheme(savedTheme);
