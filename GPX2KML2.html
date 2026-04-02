@@ -341,6 +341,18 @@
         .replace(/'/g, "&apos;");
     }
 
+    function sanitizeKmlColor8(s) {
+      const t = String(s).trim();
+      if (/^[0-9a-fA-F]{8}$/.test(t)) return t.toLowerCase();
+      return "ff0000ff";
+    }
+
+    function fmtKmlCoord(n) {
+      if (typeof n === "number" && Number.isFinite(n)) return String(n);
+      const x = Number(n);
+      return Number.isFinite(x) ? String(x) : "0";
+    }
+
     function haversineKm(lat1, lon1, lat2, lon2) {
       const toRad = (d) => d * Math.PI / 180;
       const dLat = toRad(lat2 - lat1);
@@ -476,7 +488,7 @@
       return `  <Placemark>
     <name>${escapeXml(name)}</name>
     <styleUrl>#PM</styleUrl>
-    <Point><coordinates>${lon},${lat},${z}</coordinates></Point>
+    <Point><coordinates>${fmtKmlCoord(lon)},${fmtKmlCoord(lat)},${fmtKmlCoord(z)}</coordinates></Point>
   </Placemark>
 `;
     }
@@ -641,7 +653,7 @@
       let width = parseInt(wEl?.value, 10);
       if (!Number.isFinite(width)) width = 3;
       width = Math.min(10, Math.max(0, width));
-      return { color, width };
+      return { color: sanitizeKmlColor8(color), width: Math.round(width) };
     }
 
     function buildKml(fileBaseName, gpxText, pointsRaw) {
@@ -649,7 +661,8 @@
       const { color, width } = getLineStyleForKml();
       let coordinates = "";
       for (let i = 0; i < simplified.length; i++) {
-        coordinates += `${simplified[i].lon},${simplified[i].lat},${simplified[i].ele} \n`;
+        const p = simplified[i];
+        coordinates += `${fmtKmlCoord(p.lon)},${fmtKmlCoord(p.lat)},${fmtKmlCoord(p.ele)} \n`;
       }
 
       let markerXml = "";
