@@ -36,7 +36,7 @@
   <style>
     body.light-mode {
       background: #eaf1f7;
-      color: #0f172a;
+      color: #000;
     }
     body.light-mode #bgOrbs {
       opacity: 0.35;
@@ -44,35 +44,36 @@
     body.light-mode .glass {
       background: rgba(255, 255, 255, 0.96);
       border-color: rgba(15, 23, 42, 0.16);
-      color: #0f172a;
+      color: #000;
     }
     body.light-mode .panel-strong {
       background: rgba(241, 245, 249, 0.98);
       border-color: rgba(15, 23, 42, 0.16);
+      color: #000;
     }
     body.light-mode .subtle {
-      color: #334155;
+      color: #000;
     }
     body.light-mode .surface-dark {
       background: #ffffff;
       border-color: rgba(15, 23, 42, 0.18);
-      color: #0f172a;
+      color: #000;
     }
     body.light-mode .surface-mid {
       background: #dbe7f3;
-      color: #0f172a;
+      color: #000;
     }
     body.light-mode .light-strong {
-      color: #0f172a !important;
+      color: #000 !important;
     }
     body.light-mode .light-soft {
-      color: #334155 !important;
+      color: #000 !important;
     }
     body.light-mode .option-text {
       color: #000 !important;
     }
     body.light-mode #selfile {
-      color: #0f172a;
+      color: #000;
       background: #ffffff;
       border-color: rgba(15, 23, 42, 0.25);
     }
@@ -86,6 +87,29 @@
     }
     body.light-mode #batchProgress p {
       color: #000 !important;
+    }
+    /* Tailwind の明色テキスト用ユーティリティをライトモードでは黒に */
+    body.light-mode main .text-slate-200,
+    body.light-mode main .text-slate-300,
+    body.light-mode main .text-slate-400,
+    body.light-mode main .text-cyan-200,
+    body.light-mode main .text-amber-100,
+    body.light-mode main .text-amber-200,
+    body.light-mode main .text-amber-300 {
+      color: #000 !important;
+    }
+    body.light-mode footer,
+    body.light-mode footer .text-slate-300,
+    body.light-mode footer a {
+      color: #000 !important;
+    }
+    body.light-mode #themeToggle {
+      color: #000;
+      border-color: rgba(0, 0, 0, 0.22);
+      background: rgba(0, 0, 0, 0.04);
+    }
+    body.light-mode #themeToggle:hover {
+      background: rgba(0, 0, 0, 0.08);
     }
   </style>
 </head>
