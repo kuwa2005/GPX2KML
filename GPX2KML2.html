@@ -323,13 +323,17 @@
     }
 
     function parseTrkPoints(gpxText) {
-      const regex = /<trkpt\b[^>]*lat=["']([^"']+)["'][^>]*lon=["']([^"']+)["'][^>]*>([\s\S]*?)<\/trkpt>/gi;
+      const regex = /<trkpt\b([^>]+)>([\s\S]*?)<\/trkpt>/gi;
       const points = [];
       let match;
       while ((match = regex.exec(gpxText)) !== null) {
-        const lat = parseFloat(match[1]);
-        const lon = parseFloat(match[2]);
-        const body = match[3] || "";
+        const attrs = match[1];
+        const body = match[2] || "";
+        const latM = attrs.match(/\blat=["']([^"']+)["']/i);
+        const lonM = attrs.match(/\blon=["']([^"']+)["']/i);
+        if (!latM || !lonM) continue;
+        const lat = parseFloat(latM[1]);
+        const lon = parseFloat(lonM[1]);
         if (Number.isFinite(lat) && Number.isFinite(lon)) {
           const eleMatch = body.match(/<ele>([^<]+)<\/ele>/i);
           const ele = eleMatch ? parseFloat(eleMatch[1]) : 0;
@@ -337,6 +341,135 @@
         }
       }
       return points;
+    }
+
+    function parseWptFromGpx(gpxText) {
+      const regex = /<wpt\b([^>]+)>([\s\S]*?)<\/wpt>/gi;
+      const list = [];
+      let m;
+      while ((m = regex.exec(gpxText)) !== null) {
+        const attrs = m[1];
+        const body = m[2] || "";
+        const latM = attrs.match(/\blat=["']([^"']+)["']/i);
+        const lonM = attrs.match(/\blon=["']([^"']+)["']/i);
+        if (!latM || !lonM) continue;
+        const lat = parseFloat(latM[1]);
+        const lon = parseFloat(lonM[1]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+        const eleM = body.match(/<ele>([^<]+)<\/ele>/i);
+        const ele = eleM ? parseFloat(eleM[1]) : 0;
+        const nameM = body.match(/<name>([^<]*)<\/name>/i);
+        const name = nameM ? String(nameM[1]).trim() : "";
+        list.push({ lat, lon, ele: Number.isFinite(ele) ? ele : 0, name });
+      }
+      return list;
+    }
+
+    function getSimplifyEveryNth() {
+      const radios = document.querySelectorAll('input[name="simplify"]');
+      const idx = [...radios].findIndex((r) => r.checked);
+      const map = [1, 2, 3, 5, 10];
+      return map[idx >= 0 ? idx : 0] ?? 1;
+    }
+
+    function simplifyPoints(points, everyNth) {
+      if (!points || points.length < 2 || everyNth <= 1) return points.slice();
+      const out = [];
+      for (let i = 0; i < points.length; i++) {
+        if (i % everyNth === 0) out.push(points[i]);
+      }
+      const last = points[points.length - 1];
+      if (out[out.length - 1] !== last) out.push(last);
+      if (out.length < 2) return points.slice();
+      return out;
+    }
+
+    function getTrackEdgeMode() {
+      const radios = document.querySelectorAll('input[name="trackEdge"]');
+      const idx = [...radios].findIndex((r) => r.checked);
+      return idx >= 0 ? idx : 2;
+    }
+
+    function getWaypointInclude() {
+      const radios = document.querySelectorAll('input[name="waypoint"]');
+      const idx = [...radios].findIndex((r) => r.checked);
+      return idx === 0;
+    }
+
+    function getDistanceMarkerIntervalKm() {
+      const radios = document.querySelectorAll('input[name="dist"]');
+      const idx = [...radios].findIndex((r) => r.checked);
+      if (idx <= 0) return null;
+      if (idx === 1) return 1;
+      if (idx === 2) return 2;
+      if (idx === 3) return 5;
+      if (idx === 4) {
+        const v = parseFloat(document.getElementById("distMarkerInterval")?.value);
+        if (!Number.isFinite(v) || v <= 0) return 1;
+        return Math.min(1000, Math.max(0.05, v));
+      }
+      return null;
+    }
+
+    function cumulativeDistancesKm(points) {
+      const cum = [0];
+      for (let i = 1; i < points.length; i++) {
+        cum.push(
+          cum[i - 1] +
+            haversineKm(points[i - 1].lat, points[i - 1].lon, points[i].lat, points[i].lon)
+        );
+      }
+      return cum;
+    }
+
+    function interpolateAtDistance(points, cum, d) {
+      if (d <= 0) return { lat: points[0].lat, lon: points[0].lon, ele: points[0].ele ?? 0 };
+      const total = cum[cum.length - 1];
+      if (d >= total) {
+        const p = points[points.length - 1];
+        return { lat: p.lat, lon: p.lon, ele: p.ele ?? 0 };
+      }
+      let i = 0;
+      while (i < cum.length - 1 && cum[i + 1] < d) i++;
+      const segStart = cum[i];
+      const segEnd = cum[i + 1];
+      const t = (d - segStart) / (segEnd - segStart || 1e-12);
+      const p0 = points[i];
+      const p1 = points[i + 1];
+      return {
+        lat: p0.lat + t * (p1.lat - p0.lat),
+        lon: p0.lon + t * (p1.lon - p0.lon),
+        ele: (p0.ele ?? 0) + t * ((p1.ele ?? 0) - (p0.ele ?? 0)),
+      };
+    }
+
+    function pointPlacemarkKml(name, lon, lat, ele) {
+      const z = Number.isFinite(ele) ? ele : 0;
+      return `  <Placemark>
+    <name>${escapeXml(name)}</name>
+    <styleUrl>#PM</styleUrl>
+    <Point><coordinates>${lon},${lat},${z}</coordinates></Point>
+  </Placemark>
+`;
+    }
+
+    function buildDistanceMarkerPlacemarks(points, intervalKm) {
+      if (!intervalKm || intervalKm <= 0 || points.length < 2) return "";
+      const cum = cumulativeDistancesKm(points);
+      const total = cum[cum.length - 1];
+      if (total <= 0) return "";
+      let xml = "";
+      let n = 1;
+      for (;;) {
+        const d = intervalKm * n;
+        if (d >= total) break;
+        const p = interpolateAtDistance(points, cum, d);
+        const label =
+          intervalKm < 1 ? `${d.toFixed(2)} km` : `${Math.round(d * 100) / 100} km`;
+        xml += pointPlacemarkKml(label, p.lon, p.lat, p.ele);
+        n++;
+      }
+      return xml;
     }
 
     function updateStats(gpxText, points) {
@@ -483,12 +616,46 @@
       return { color, width };
     }
 
-    function buildKml(fileBaseName, points) {
+    function buildKml(fileBaseName, gpxText, pointsRaw) {
+      const simplified = simplifyPoints(pointsRaw, getSimplifyEveryNth());
       const { color, width } = getLineStyleForKml();
       let coordinates = "";
-      for (let i = 0; i < points.length; i++) {
-        coordinates += `${points[i].lon},${points[i].lat},${points[i].ele} \n`;
+      for (let i = 0; i < simplified.length; i++) {
+        coordinates += `${simplified[i].lon},${simplified[i].lat},${simplified[i].ele} \n`;
       }
+
+      let markerXml = "";
+      const edgeMode = getTrackEdgeMode();
+      if (edgeMode === 0) {
+        for (let i = 0; i < simplified.length; i++) {
+          markerXml += pointPlacemarkKml(
+            `トラック点 ${i + 1}`,
+            simplified[i].lon,
+            simplified[i].lat,
+            simplified[i].ele
+          );
+        }
+      } else if (edgeMode === 1) {
+        const a = simplified[0];
+        const b = simplified[simplified.length - 1];
+        markerXml += pointPlacemarkKml("始点", a.lon, a.lat, a.ele);
+        if (simplified.length > 1) {
+          markerXml += pointPlacemarkKml("終点", b.lon, b.lat, b.ele);
+        }
+      }
+
+      if (getWaypointInclude()) {
+        for (const w of parseWptFromGpx(gpxText)) {
+          const nm = w.name || "ウェイポイント";
+          markerXml += pointPlacemarkKml(nm, w.lon, w.lat, w.ele);
+        }
+      }
+
+      const distKm = getDistanceMarkerIntervalKm();
+      if (distKm != null) {
+        markerXml += buildDistanceMarkerPlacemarks(simplified, distKm);
+      }
+
       return `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
 <Document>
@@ -499,6 +666,12 @@
       <width>${width}</width>
     </LineStyle>
   </Style>
+  <Style id="PM">
+    <IconStyle>
+      <scale>0.45</scale>
+      <Icon><href>https://maps.google.com/mapfiles/kml/paddle/wht-blank.png</href></Icon>
+    </IconStyle>
+  </Style>
   <Placemark>
     <name>${escapeXml(fileBaseName)}</name>
     <styleUrl>#L1</styleUrl>
@@ -507,7 +680,7 @@
 ${coordinates}      </coordinates>
     </LineString>
   </Placemark>
-</Document>
+${markerXml}</Document>
 </kml>
 `;
     }
@@ -518,7 +691,7 @@ ${coordinates}      </coordinates>
       try {
         const points = parseTrkPoints(gpxText);
         if (points.length < 2) return;
-        generatedKml = buildKml(loadedFileName || "track", points);
+        generatedKml = buildKml(loadedFileName || "track", gpxText, points);
         wrtTxt.value = generatedKml;
       } catch (_) {}
     }
@@ -567,7 +740,7 @@ ${coordinates}      </coordinates>
       }
 
       const fileBaseName = file.name.replace(/\.[^.]+$/, "") || "track";
-      const kml = buildKml(fileBaseName, points);
+      const kml = buildKml(fileBaseName, gpxText, points);
 
       if (updateUi) {
         readTxt.value = gpxText;
@@ -741,7 +914,9 @@ ${coordinates}      </coordinates>
     const lineWidthEl = document.getElementById("lineWidthInput");
     lineWidthEl?.addEventListener("input", regenerateKmlFromUi);
     lineWidthEl?.addEventListener("change", regenerateKmlFromUi);
-    document.getElementById("distMarkerInterval")?.addEventListener("change", regenerateKmlFromUi);
+    const distIntervalEl = document.getElementById("distMarkerInterval");
+    distIntervalEl?.addEventListener("input", regenerateKmlFromUi);
+    distIntervalEl?.addEventListener("change", regenerateKmlFromUi);
 
     const savedTheme = getCookie("gpx2kml_theme") || "light";
     setTheme(savedTheme);
